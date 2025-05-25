@@ -1,14 +1,12 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Piano, KeyboardShortcuts, MidiNumbers } from "react-piano";
 import "react-piano/dist/styles.css";
 import { useEffect, useRef } from "react";
 import * as Tone from "tone";
 
-type Props = {
-  activeNotes: string[];
-};
-
-export function VisualPiano({ activeNotes }: Props) {
+export function VisualPiano() {
   const noteRange = {
     first: MidiNumbers.fromNote("C4"),
     last: MidiNumbers.fromNote("B5"),
@@ -49,7 +47,6 @@ export function VisualPiano({ activeNotes }: Props) {
           const note = MidiNumbers.getAttributes(midiNumber).note;
           synthRef.current?.triggerRelease(note);
         }}
-        // activeNotes={activeNotes.map((note) => MidiNumbers.fromNote(note))}
         disabled={false}
         width={700}
         keyboardShortcuts={keyboardShortcuts}

@@ -1,4 +1,5 @@
-import { Interval, Note } from "tonal";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Note } from "tonal";
 import { getIntervalsFrom, matchChordBySemitones } from "./getIntervals";
 import { CHORD_STRUCTURES } from "./chordStructures";
 

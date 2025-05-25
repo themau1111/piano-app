@@ -103,7 +103,7 @@ export function KeyboardPiano() {
       )}
 
       <div className="bg-background text-foreground p-4"></div>
-      <VisualPiano activeNotes={currentNotes} />
+      <VisualPiano />
     </div>
   );
 }
