@@ -4,15 +4,25 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
 }
 
-@media (prefers-color-scheme: dark) {
+/* .dark {
+  --background: #0f172a; /* gris azulado oscuro, puedes cambiarlo */
+/*--foreground: #f8fafc;
+} */
+
+html.dark {
+  --background: #0f172a; /* 👈 importante: aplica en html.dark */
+  --foreground: #f8fafc;
+}
+
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
-}
+} */
 
 body {
   color: var(--foreground);

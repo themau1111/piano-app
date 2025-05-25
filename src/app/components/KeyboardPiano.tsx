@@ -3,18 +3,18 @@ import { useEffect, useRef, useState } from "react";
 import * as Tone from "tone";
 import { keyToNoteMap } from "../lib/keyToNoteMap";
 import { VisualPiano } from "./VisualPiano";
-import { Chord } from "tonal";
 import { formatChordName } from "../lib/formatChordName";
 import { analyzeChord } from "../lib/analyzeChord";
 
 export function KeyboardPiano() {
   const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
   const synthRef = useRef<Tone.Sampler | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     // Crea synth una vez
     if (!synthRef.current) {
-      synthRef.current = new Tone.Sampler({
+      const sampler = new Tone.Sampler({
         urls: {
           C4: "C4.mp3",
           "D#4": "Ds4.mp3",
@@ -23,7 +23,12 @@ export function KeyboardPiano() {
         },
         release: 1,
         baseUrl: "https://tonejs.github.io/audio/salamander/", // Biblioteca de samples gratuitos
+        onload: () => {
+          setIsLoaded(true);
+          console.log("Sampler cargado");
+        },
       }).toDestination();
+      synthRef.current = sampler;
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -60,6 +65,17 @@ export function KeyboardPiano() {
 
   const chordInfo = analyzeChord(currentNotes);
 
+  if (!isLoaded) {
+    return (
+      <div className="text-center mt-8 flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-4 border-gray-300 border-t-transparent rounded-full animate-spin mb-2" />
+        <p className="text-lg font-semibold text-gray-400">
+          🎧 Cargando piano…
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-6 text-center">
       <h2 className="text-lg font-bold">🎹 Toca con el teclado (A–Ñ)</h2>
@@ -86,6 +102,7 @@ export function KeyboardPiano() {
         </div>
       )}
 
+      <div className="bg-background text-foreground p-4"></div>
       <VisualPiano activeNotes={currentNotes} />
     </div>
   );

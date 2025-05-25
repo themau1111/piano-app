@@ -1,17 +1,8 @@
+import { Interval, Note } from "tonal";
+import { getIntervalsFrom, matchChordBySemitones } from "./getIntervals";
 import { CHORD_STRUCTURES } from "./chordStructures";
-import { Note, Interval } from "tonal";
-import * as Tone from "tone";
-import { getIntervalsFrom } from "./getIntervals";
 
-type ChordAnalysis = {
-  name: string | null;
-  root: string | null;
-  inversion: "root" | "1st" | "2nd" | null;
-  figuredBass: "5/3" | "6/3" | "6/4" | null;
-  intervals: string[];
-};
-
-export function analyzeChord(notes: string[]): ChordAnalysis {
+export function analyzeChord(notes: string[]) {
   if (notes.length < 3)
     return {
       name: null,
@@ -21,52 +12,88 @@ export function analyzeChord(notes: string[]): ChordAnalysis {
       intervals: [],
     };
 
-  const sorted = [...notes].sort(
-    (a, b) => Tone.Frequency(a).toMidi() - Tone.Frequency(b).toMidi()
-  );
+  const sorted = [...notes].sort((a, b) => Note.midi(a)! - Note.midi(b)!);
 
   for (const candidateRoot of sorted) {
-    const intervals = getIntervalsFrom(candidateRoot, sorted);
-
-    for (const chordType of CHORD_STRUCTURES) {
-      const match = chordType.intervals.every((i) => intervals.includes(i));
-
-      if (match) {
+    for (const chord of CHORD_STRUCTURES) {
+      if (matchChordBySemitones(candidateRoot, sorted, chord.intervals)) {
+        const bass = Note.pitchClass(sorted[0]);
         const root = Note.pitchClass(candidateRoot);
 
-        // Detectar inversión con respecto a la raíz
-        const bass = Note.pitchClass(sorted[0]);
-        const positions = chordType.intervals.map((i) => Interval.semitones(i));
-        const figuredBass =
-          bass === root
-            ? "5/3"
-            : intervals.includes("6M") && intervals.includes("3M")
-            ? "6/3"
-            : intervals.includes("6M") && intervals.includes("4P")
-            ? "6/4"
-            : null;
+        const intervalsFromBass = getIntervalsFrom(sorted[0], sorted);
 
-        const inversion =
-          bass === root
-            ? "root"
-            : figuredBass === "6/3"
-            ? "1st"
-            : figuredBass === "6/4"
-            ? "2nd"
-            : null;
+        let inversion: "root" | "1st" | "2nd" | "3rd" | null = null;
+        let figuredBass:
+          | "5/3"
+          | "6/3"
+          | "6/4"
+          | "7"
+          | "6/5"
+          | "4/3"
+          | "4/2"
+          | null = null;
+
+        const bassNote = sorted[0];
+        const bassPC = Note.pitchClass(bassNote);
+        const rootNote = candidateRoot;
+
+        if (chord.intervals.length === 4) {
+          const thirdNote = Note.pitchClass(
+            Note.transpose(rootNote, chord.intervals[1])
+          );
+          const fifthNote = Note.pitchClass(
+            Note.transpose(rootNote, chord.intervals[2])
+          );
+          const seventhNote = Note.pitchClass(
+            Note.transpose(rootNote, chord.intervals[3])
+          );
+
+          if (bassPC === root) {
+            inversion = "root";
+            figuredBass = "7";
+          } else if (bassPC === thirdNote) {
+            inversion = "1st";
+            figuredBass = "6/5";
+          } else if (bassPC === fifthNote) {
+            inversion = "2nd";
+            figuredBass = "4/3";
+          } else if (bassPC === seventhNote) {
+            inversion = "3rd";
+            figuredBass = "4/2";
+          }
+        } else {
+          const thirdNote = Note.pitchClass(
+            Note.transpose(rootNote, chord.intervals[1])
+          );
+          const fifthNote = Note.pitchClass(
+            Note.transpose(rootNote, chord.intervals[2])
+          );
+
+          if (bassPC === root) {
+            inversion = "root";
+            figuredBass = "5/3";
+          } else if (bassPC === thirdNote) {
+            inversion = "1st";
+            figuredBass = "6/3";
+          } else if (bassPC === fifthNote) {
+            inversion = "2nd";
+            figuredBass = "6/4";
+          }
+        }
+
+        const formattedName =
+          chord.name === "major"
+            ? root
+            : chord.name === "minor"
+            ? root + "m"
+            : root + chord.name;
 
         return {
-          name: `${root}${
-            chordType.name === "major"
-              ? ""
-              : chordType.name === "minor"
-              ? "m"
-              : chordType.name
-          }`,
+          name: formattedName,
           root,
           inversion,
           figuredBass,
-          intervals,
+          intervals: intervalsFromBass,
         };
       }
     }
