@@ -1,68 +1,38 @@
 "use client";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getMyPreferences, upsertMyPreferences } from "../lib/api";
-
-const DEFAULTS = { theme: "dark", locale: "es-MX", instrument: "piano" };
+import { PreferencesForm } from "../components/preferences/PreferencesForm";
+import { usePreferences } from "../hooks/usePreferences";
 
 export default function PreferencesPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [pref, setPref] = useState<Record<string, any>>(DEFAULTS);
+  const { data, setData, loading, saving, save } = usePreferences();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const p = await getMyPreferences();
-        if (p) {
-          setPref({ ...DEFAULTS, ...p });
-        }
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  if (loading) return <div className="p-8 text-white">Cargando…</div>;
 
-  async function save() {
-    await upsertMyPreferences(pref);
-    router.replace("/"); // listo, a home
+  async function handleSave() {
+    await save(data);
+    router.replace("/");
   }
 
-  if (loading) return <div className="p-8">Cargando…</div>;
-
   return (
-    <main className="max-w-xl mx-auto py-10">
-      <h1 className="text-2xl font-semibold mb-6">Preferencias</h1>
-
-      <div className="space-y-4">
-        <div>
-          <label className="block mb-1">Tema</label>
-          <select value={pref.theme} onChange={(e) => setPref((p) => ({ ...p, theme: e.target.value }))} className="text-black rounded px-3 py-2">
-            <option value="dark">Oscuro</option>
-            <option value="light">Claro</option>
-          </select>
+    <div className="min-h-screen bg-gradient-to-br from-[#0b1325] via-[#0d1530] to-[#161b33]">
+      <header className="sticky top-0 z-40 backdrop-blur border-b border-white/10 bg-[#0b1325]/70">
+        <div className="mx-auto max-w-5xl px-4 h-14 flex items-center justify-between">
+          <h1 className="text-white font-semibold">Preferencias</h1>
+          <div className="flex items-center gap-2">
+            <button onClick={() => router.replace("/")} className="px-3 py-2 rounded-lg border border-white/15 text-white/80 hover:bg-white/10">
+              Omitir por ahora
+            </button>
+            <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg bg-white/90 text-black font-medium hover:bg-white disabled:opacity-60">
+              {saving ? "Guardando…" : "Guardar y continuar"}
+            </button>
+          </div>
         </div>
+      </header>
 
-        <div>
-          <label className="block mb-1">Idioma</label>
-          <select value={pref.locale} onChange={(e) => setPref((p) => ({ ...p, locale: e.target.value }))} className="text-black rounded px-3 py-2">
-            <option value="es-MX">Español (MX)</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block mb-1">Instrumento</label>
-          <select value={pref.instrument} onChange={(e) => setPref((p) => ({ ...p, instrument: e.target.value }))} className="text-black rounded px-3 py-2">
-            <option value="piano">Piano</option>
-            <option value="keys">Synth/Keys</option>
-          </select>
-        </div>
-
-        <button onClick={save} className="mt-4 rounded-lg bg-white/10 px-4 py-2 hover:bg-white/20">
-          Guardar y continuar
-        </button>
-      </div>
-    </main>
+      <main className="mx-auto max-w-5xl px-4 py-8">
+        <PreferencesForm pref={data} setPref={setData} />
+      </main>
+    </div>
   );
 }
