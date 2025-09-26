@@ -31,7 +31,7 @@ export type RevealResponse = {
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export async function startChord(body: { level: ExerciseLevel; attempts?: number; clef?: "treble" | "bass"; showRootOnStaff?: boolean }) {
-  const r = await fetch(`${BASE}/exercises/chord/start`, {
+  const r = await fetch(`${BASE}/exercises/start`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -42,7 +42,7 @@ export async function startChord(body: { level: ExerciseLevel; attempts?: number
 }
 
 export async function replay(exerciseId: string, mode: "block" | "arpeggio" | "arpeggioSlow" | "arpeggioVerySlow") {
-  const r = await fetch(`${BASE}/exercises/chord/replay`, {
+  const r = await fetch(`${BASE}/exercises/replay`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -53,7 +53,7 @@ export async function replay(exerciseId: string, mode: "block" | "arpeggio" | "a
 }
 
 export async function attempt(body: { exerciseId: string; notes: number[]; name?: string; inversion?: 0 | 1 | 2 | 3 }) {
-  const r = await fetch(`${BASE}/exercises/chord/attempt`, {
+  const r = await fetch(`${BASE}/exercises/attempt`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -64,7 +64,7 @@ export async function attempt(body: { exerciseId: string; notes: number[]; name?
 }
 
 export async function reveal(exerciseId: string) {
-  const r = await fetch(`${BASE}/exercises/chord/reveal`, {
+  const r = await fetch(`${BASE}/exercises/reveal`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
