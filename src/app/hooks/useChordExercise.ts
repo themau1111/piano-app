@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { attempt, replay, reveal, startChord, type AttemptResponse, type StartResponse, type RevealResponse } from "@/lib/api/chordRunner";
