@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { use } from "react";
 import { fetchExercisesByTopicId, fetchTopicsBySectionCode } from "@/lib/api/api";

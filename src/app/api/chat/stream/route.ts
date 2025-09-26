@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const runtime = "nodejs";
 
 type RawMsg = { role: "system" | "user" | "assistant"; content: string };

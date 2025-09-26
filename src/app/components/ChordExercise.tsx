@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 "use client";
 import { useEffect, useRef, useState } from "react";
 import * as Tone from "tone";

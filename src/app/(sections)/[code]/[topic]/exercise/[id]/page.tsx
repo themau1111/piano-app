@@ -9,7 +9,7 @@ const ChordExercise = dynamic(() => import("@/app/components/ChordExercise"), {
 });
 
 export default function ExerciseRunnerPage({ params }: { params: Promise<{ code: string; topic: string; id: string }> }) {
-  const { id, code, topic } = use(params);
+  const { id } = use(params);
 
   const {
     data: exercise,

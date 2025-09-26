@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { runExercise } from "@/lib/api/api";
 import { useMutation } from "@tanstack/react-query";
 

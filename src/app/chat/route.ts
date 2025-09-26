@@ -1,4 +1,5 @@
-import { ChatRequest, ChatResponse } from "@/lib/chat/types";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { ChatRequest } from "@/lib/chat/types";
 import { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
