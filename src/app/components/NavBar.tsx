@@ -129,6 +129,11 @@ export default function Navbar() {
 
           {/* Right zone */}
           <div className="flex items-center gap-2">
+            {user?.role === "admin" && (
+              <a href="/admin" className={cn("px-3 py-2 rounded hover:bg-white/10")}>
+                Admin
+              </a>
+            )}
             {mode === "guest" ? (
               <Link href="/login">
                 <Button variant="solid" size="sm">

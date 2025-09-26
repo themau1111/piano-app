@@ -9,6 +9,7 @@ export type CurrentUser = {
   displayName: string;
   username?: string;
   avatarUrl?: string;
+  role?: string;
 };
 
 export function useCurrentUser() {
@@ -26,6 +27,7 @@ export function useCurrentUser() {
         displayName: m.display_name ?? m.name ?? user.email?.split("@")[0] ?? "Usuario",
         username: m.username ?? "",
         avatarUrl: m.avatar_url ?? m.picture ?? undefined,
+        role: (user.app_metadata as any)?.role ?? (user.user_metadata as any)?.role ?? "user",
       };
     },
     staleTime: 60_000,
