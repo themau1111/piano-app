@@ -5,6 +5,7 @@ import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@
 import { useQuery } from "@tanstack/react-query";
 import { getMyPreferences } from "../../lib/api/api";
 import type { ChatMessage } from "../../lib/chat/types";
+import type { Prefs } from "../../lib/prefs";
 import { cn } from "../../lib/cn";
 import { useTyping } from "@/context/TypingContext";
 
@@ -41,6 +42,11 @@ export function ChatPanel({ open, onClose, userId, username }: { open: boolean; 
     () => ["Crea una rutina de 20 min para hoy", "Explícame los acordes mayores con ejemplos", "Ejercicio de oído para intervalos", "Recomiéndame una canción nivel intermedio"],
     []
   );
+
+  const chatPrefs = useMemo(() => {
+    if (!prefs) return null;
+    return prefs as Partial<Prefs>;
+  }, [prefs]);
 
   async function sendMessage(text: string) {
     const content = text.trim();
@@ -145,7 +151,7 @@ export function ChatPanel({ open, onClose, userId, username }: { open: boolean; 
                 <div className="p-5 border-b border-white/10">
                   <DialogTitle className="font-semibold">Asistente de MusicAula</DialogTitle>
                   <p className="text-xs text-white/60 mt-1">
-                    Personalizado para {prefs?.primaryInstrument ?? "piano"} · nivel {prefs?.level ?? "beginner"}
+                    Personalizado para {chatPrefs?.primaryInstrument ?? "piano"} · nivel {chatPrefs?.level ?? "beginner"}
                   </p>
                 </div>
 

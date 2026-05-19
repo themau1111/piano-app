@@ -1,129 +1,129 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import axios from "axios";
+import {
+  AdminCatalogData,
+  ExerciseAttemptAnswer,
+  ExerciseCatalogItem,
+  ExerciseDetail,
+  ExerciseRunSnapshot,
+  PracticeQueueResponse,
+  ProgressResponse,
+  Section,
+  Topic,
+} from "@/lib/exercises/contracts";
 import { supabase } from "../supabaseClient";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+
+async function getAccessToken() {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
+async function apiFetch<T>(
+  path: string,
+  init?: RequestInit,
+  opts?: { auth?: boolean }
+): Promise<T> {
+  const headers = new Headers(init?.headers);
+  const wantsAuth = opts?.auth ?? false;
+
+  if (init?.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (wantsAuth) {
+    const token = await getAccessToken();
+    if (!token) throw new Error("No session");
+    headers.set("Authorization", `Bearer ${token}`);
+  } else {
+    const token = await getAccessToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers,
+    credentials: "include",
+    cache: init?.cache ?? "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+
+  return res.json() as Promise<T>;
+}
 
 export async function fetchSections() {
-  if (API_URL) {
-    const res = await fetch(`${API_URL}/sections`, { next: { revalidate: 60 } });
-    if (!res.ok) throw new Error("No se pudieron cargar secciones");
-    return res.json();
-  }
-  // Fallback directo a Supabase (catálogo es público con RLS de sólo lectura)
-  const { data, error } = await supabase.from("sections").select("id, code, title, description").order("id");
-  if (error) throw error;
-  return data;
-}
-
-export async function fetchExercisesBySection(sectionId: number) {
-  if (API_URL) {
-    const res = await fetch(`${API_URL}/sections/exercises?section_id=${sectionId}`);
-    if (!res.ok) throw new Error("No se pudieron cargar ejercicios");
-    return res.json();
-  }
-  const { data, error } = await supabase.from("exercises").select("id, section_id, kind, title, config").eq("section_id", sectionId).eq("is_active", true).order("id");
-  if (error) throw error;
-  return data;
-}
-
-// Preferencias del usuario autenticado (RLS hace el filtro por auth.uid())
-export async function getMyPreferences() {
-  const { data: sessionRes } = await supabase.auth.getSession();
-  const user = sessionRes.session?.user;
-  if (!user) return null;
-  const { data, error } = await supabase.from("preferences").select("data").eq("user_id", user.id).maybeSingle();
-  if (error) throw error;
-  return data?.data ?? null;
-}
-
-export async function upsertMyPreferences(pref: Record<string, any>) {
-  const { data: sessionRes } = await supabase.auth.getSession();
-  const user = sessionRes.session?.user;
-  if (!user) throw new Error("No session");
-  const { error } = await supabase.from("preferences").upsert({ user_id: user.id, data: pref });
-  if (error) throw error;
+  return apiFetch<Section[]>("/sections");
 }
 
 export async function fetchTopicsBySectionCode(sectionCode: string) {
-  if (API_URL) {
-    const r = await fetch(`${API_URL}/topics?section_code=${sectionCode}`, { next: { revalidate: 60 } });
-    if (!r.ok) throw new Error("No se pudieron cargar temas");
-    return r.json();
-  }
-  const { data: section } = await supabase.from("sections").select("id").eq("code", sectionCode).maybeSingle();
-  if (!section) return [];
+  return apiFetch<Topic[]>(`/sections/${sectionCode}/topics`);
+}
 
-  const { data, error } = await supabase.from("topics").select("id, section_id, code, title, description").eq("section_id", section.id).order("id");
-  if (error) throw error;
-  return data;
+export async function fetchTopicsAllBySectionCode() {
+  return apiFetch<Record<string, Topic[]>>("/topics/grouped");
 }
 
 export async function fetchExercisesByTopicId(topicId: string | number) {
-  const id = Number(topicId);
-  if (Number.isNaN(id)) throw new Error("topicId inválido");
-
-  if (API_URL) {
-    const r = await fetch(`${API_URL}/topics/${id}/exercises`, { cache: "no-store" });
-    if (!r.ok) throw new Error("No se pudieron cargar ejercicios");
-    return r.json();
-  }
-
-  const { data, error } = await supabase
-    .from("exercises")
-    .select("id, section_id, topic_id, kind, title, description, config")
-    .eq("topic_id", id)
-    .eq("is_active", true)
-    .order("id");
-
-  if (error) throw error;
-  return data;
-}
-export async function fetchTopicsAllBySectionCode(): Promise<Record<string, any[]>> {
-  if (API_URL) {
-    const r = await fetch(`${API_URL}/topics/grouped`);
-    if (!r.ok) throw new Error("No se pudieron cargar los temas");
-    return r.json();
-  }
-
-  const { data, error } = await supabase.from("topics").select("id, code, title, description, section_id, section:sections(code)").order("id");
-
-  if (error) throw error;
-
-  const map: Record<string, any[]> = {};
-  for (const t of data as any[]) {
-    const sectionCode = t.section?.code as string | undefined;
-    if (!sectionCode) continue;
-
-    if (!map[sectionCode]) map[sectionCode] = [];
-    map[sectionCode].push({
-      id: t.id,
-      code: t.code,
-      title: t.title,
-      description: t.description,
-    });
-  }
-
-  return map;
+  return apiFetch<ExerciseCatalogItem[]>(`/topics/${Number(topicId)}/exercises`);
 }
 
-export async function runExercise(type: string, payload?: any) {
-  const res = await axios.post("/api/exercises/run", { type, payload });
-  return res.data;
+export async function fetchExerciseById(id: string | number) {
+  return apiFetch<ExerciseDetail>(`/exercises/${Number(id)}`);
 }
 
-export async function fetchExerciseById(id: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exercises/${id}`, {
-    credentials: "include",
-    cache: "no-store",
+export async function startExercise(id: number, payload?: { seed?: number }) {
+  return apiFetch<ExerciseRunSnapshot>(`/exercises/${id}/start`, {
+    method: "POST",
+    body: JSON.stringify(payload ?? {}),
   });
-  if (!res.ok) throw new Error("Failed to load exercise");
-  return res.json() as Promise<{
-    id: string;
-    kind: "chord" | "interval" | "scale";
-    title: string;
-    description?: string;
-    config: Record<string, any>;
-    topicId: string;
-  }>;
+}
+
+export async function getExerciseRun(runId: string) {
+  return apiFetch<ExerciseRunSnapshot>(`/exercise-runs/${runId}`);
+}
+
+export async function attemptExerciseRun(runId: string, answer: ExerciseAttemptAnswer) {
+  return apiFetch<{ ok: boolean; run: ExerciseRunSnapshot }>(`/exercise-runs/${runId}/attempt`, {
+    method: "POST",
+    body: JSON.stringify(answer),
+  });
+}
+
+export async function replayExerciseRun(runId: string) {
+  return apiFetch<{ ok: boolean; playback: Array<{ midi: number; atMs: number; durationMs: number }> }>(`/exercise-runs/${runId}/replay`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function revealExerciseRun(runId: string) {
+  return apiFetch<{ ok: boolean; run: ExerciseRunSnapshot }>(`/exercise-runs/${runId}/reveal`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function getMyProgress() {
+  return apiFetch<ProgressResponse>("/me/progress", undefined, { auth: true });
+}
+
+export async function getPracticeQueue() {
+  return apiFetch<PracticeQueueResponse>("/me/practice-queue", undefined, { auth: true });
+}
+
+export async function getMyPreferences() {
+  return apiFetch<Record<string, unknown> | null>("/me/preferences", undefined, { auth: true });
+}
+
+export async function upsertMyPreferences(pref: Record<string, unknown>) {
+  return apiFetch<{ ok: boolean; data: Record<string, unknown> }>("/me/preferences", {
+    method: "PUT",
+    body: JSON.stringify(pref),
+  }, { auth: true });
+}
+
+export async function listAdminCatalog() {
+  return apiFetch<AdminCatalogData>("/admin/sections", undefined, { auth: true });
 }

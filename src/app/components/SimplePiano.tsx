@@ -1,6 +1,7 @@
 "use client";
 import * as Tone from "tone";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { keyToNoteMap } from "@/lib/keyToNoteMap";
 
 type Props = {
   active: Set<number>;
@@ -12,6 +13,7 @@ type Props = {
 
 export function SimplePiano({ active, selected, onKeyDown, onKeyUp, range = [60, 72] }: Props) {
   const sampler = useRef<Tone.Sampler | null>(null);
+  const pressedKeys = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!sampler.current) {
@@ -30,6 +32,16 @@ export function SimplePiano({ active, selected, onKeyDown, onKeyUp, range = [60,
 
   const isBlack = (m: number) => [1, 3, 6, 8, 10].includes(m % 12);
   const midiToNote = (m: number) => Tone.Frequency(m, "midi").toNote(); // p.ej. 60 -> "C4"
+  const keyboardMidiMap = useMemo(() => {
+    const map = new Map<string, number>();
+    Object.entries(keyToNoteMap).forEach(([key, note]) => {
+      const midi = Tone.Frequency(note).toMidi();
+      if (midi >= range[0] && midi <= range[1]) {
+        map.set(key.toLowerCase(), midi);
+      }
+    });
+    return map;
+  }, [range]);
 
   const keys = Array.from({ length: range[1] - range[0] + 1 }, (_, i) => range[0] + i);
   const whiteKeys = keys.filter((k) => !isBlack(k));
@@ -38,16 +50,49 @@ export function SimplePiano({ active, selected, onKeyDown, onKeyUp, range = [60,
   const wWhite = 100 / whiteKeys.length;
   const wBlack = wWhite * 0.6;
 
-  const handleDown = async (m: number) => {
+  const handleDown = useCallback(async (m: number) => {
     await Tone.start(); // asegura el AudioContext al primer click
     onKeyDown(m);
     sampler.current?.triggerAttack(midiToNote(m));
-  };
+  }, [onKeyDown]);
 
-  const handleUp = (m: number) => {
+  const handleUp = useCallback((m: number) => {
     onKeyUp(m);
     sampler.current?.triggerRelease(midiToNote(m));
-  };
+  }, [onKeyUp]);
+
+  useEffect(() => {
+    const isTypingInInput = () => {
+      const el = document.activeElement as HTMLElement | null;
+      if (!el) return false;
+      const tag = el.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
+    };
+
+    const down = async (event: KeyboardEvent) => {
+      if (event.repeat || event.metaKey || event.ctrlKey || event.altKey || isTypingInInput()) return;
+      const key = (event.key.length === 1 ? event.key.toLowerCase() : event.key) as string;
+      const midi = keyboardMidiMap.get(key);
+      if (midi == null || pressedKeys.current.has(key)) return;
+      pressedKeys.current.add(key);
+      await handleDown(midi);
+    };
+
+    const up = (event: KeyboardEvent) => {
+      const key = (event.key.length === 1 ? event.key.toLowerCase() : event.key) as string;
+      const midi = keyboardMidiMap.get(key);
+      if (midi == null) return;
+      pressedKeys.current.delete(key);
+      handleUp(midi);
+    };
+
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+    };
+  }, [handleDown, handleUp, keyboardMidiMap]);
 
   return (
     <div className="relative w-full h-full select-none">

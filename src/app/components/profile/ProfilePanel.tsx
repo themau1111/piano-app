@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Link from "next/link";
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
 import { Avatar } from "../ui/Avatar";
 import { useQuery } from "@tanstack/react-query";
 import { getMyPreferences } from "../../../lib/api/api";
 import { useCurrentUser } from "@/app/hooks/useCurrentUser";
+import type { Prefs } from "@/lib/prefs";
 
 export function ProfilePanel({ open, onClose, onSignOut }: { open: boolean; onClose: () => void; onSignOut: () => void }) {
   const { data: user } = useCurrentUser();
@@ -15,6 +15,10 @@ export function ProfilePanel({ open, onClose, onSignOut }: { open: boolean; onCl
     queryFn: getMyPreferences,
     enabled: open,
   });
+  const profilePrefs = useMemo(() => {
+    if (!prefs) return null;
+    return prefs as Partial<Prefs> & { instrument?: string };
+  }, [prefs]);
 
   return (
     <Transition show={open} as={Fragment}>
@@ -67,13 +71,13 @@ export function ProfilePanel({ open, onClose, onSignOut }: { open: boolean; onCl
 
                   <div className="border-t border-white/10 pt-4">
                     <h3 className="text-sm font-medium mb-3 text-white/80">Resumen de preferencias</h3>
-                    {prefs ? (
+                    {profilePrefs ? (
                       <ul className="space-y-2 text-sm">
-                        <Li label="Tema" value={prefs.theme ?? "—"} />
-                        <Li label="Idioma" value={prefs.locale ?? "—"} />
-                        <Li label="Instrumento" value={prefs.primaryInstrument ?? (prefs as any).instrument ?? "—"} />
-                        <Li label="Nivel" value={prefs.level ?? "—"} />
-                        <Li label="Objetivos" value={(prefs.goals ?? []).join(" · ") || "—"} />
+                        <Li label="Tema" value={profilePrefs.theme ?? "—"} />
+                        <Li label="Idioma" value={profilePrefs.locale ?? "—"} />
+                        <Li label="Instrumento" value={profilePrefs.primaryInstrument ?? profilePrefs.instrument ?? "—"} />
+                        <Li label="Nivel" value={profilePrefs.level ?? "—"} />
+                        <Li label="Objetivos" value={(profilePrefs.goals ?? []).join(" · ") || "—"} />
                       </ul>
                     ) : (
                       <p className="text-sm text-white/60">Aún no has configurado preferencias.</p>

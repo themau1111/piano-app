@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 /** ===== Tipos ===== */
@@ -16,8 +14,6 @@ type StaffGlyphNote = {
 
 /** ===== Glifos ===== */
 const CLEF_G = "𝄞"; // clave de sol
-const CLEF_C = "𝄡";
-const CLEF_F = "𝄢";
 
 const GLYPHS_NOTEHEAD: Record<Exclude<Figure, "eighth" | "sixteenth">, string> = {
   whole: "\uE0A2", // redonda

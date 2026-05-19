@@ -1,74 +1,143 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listSectionsFull, upsertSection, deleteSection, upsertTopic, deleteTopic, upsertExercise, toggleExercise, deleteExercise, seedBasic } from "@/lib/api/admin";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  deleteExercise,
+  deleteSection,
+  deleteTopic,
+  listSectionsFull,
+  previewExercise,
+  seedBasic,
+  toggleExercise,
+  upsertExercise,
+  upsertSection,
+  upsertTopic,
+} from "@/lib/api/admin";
 import { useCurrentUser } from "../hooks/useCurrentUser";
+import type { ExerciseKind, ExerciseTemplateConfig } from "@/lib/exercises/contracts";
 
-// --- UI helpers ---
-function Card(props: { title: string; subtitle?: string; children: React.ReactNode; right?: React.ReactNode }) {
-  return (
-    <section className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/10">
-      <div className="flex items-center justify-between px-5 pt-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">{props.title}</h2>
-          {props.subtitle && <p className="text-xs text-neutral-500 mt-0.5">{props.subtitle}</p>}
-        </div>
-        {props.right}
-      </div>
-      <div className="p-5">{props.children}</div>
-    </section>
-  );
-}
+type PreviewSample = {
+  seed: number;
+  prompt: Record<string, unknown>;
+  input: Record<string, unknown>;
+  presentation: Record<string, unknown>;
+  solution: Record<string, unknown>;
+};
 
-function Label({ children }: { children: React.ReactNode }) {
-  return <label className="text-xs font-medium text-neutral-600 dark:text-neutral-300">{children}</label>;
-}
-function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className={`h-9 w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
-        props.className ?? ""
-      }`}
-    />
-  );
-}
-function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={`h-9 w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
-        props.className ?? ""
-      }`}
-    />
-  );
-}
-function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "ghost" | "danger" }) {
-  const base = "inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium transition focus-visible:outline-none disabled:opacity-50";
-  const map = {
-    primary: "bg-blue-600 text-white hover:bg-blue-600/90",
-    ghost: "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200/70 dark:hover:bg-neutral-700",
-    danger: "bg-red-600 text-white hover:bg-red-600/90",
-  };
-  return <button {...props} className={`${base} ${map[props.variant ?? "primary"]} ${props.className ?? ""}`} />;
-}
-function Badge({ children, color = "gray" }: { children: React.ReactNode; color?: "green" | "gray" }) {
-  const cls =
-    color === "green" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" : "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300";
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${cls}`}>{children}</span>;
-}
-function SkeletonRow({ cols = 6 }: { cols?: number }) {
-  return (
-    <tr className="animate-pulse">
-      {Array.from({ length: cols }).map((_, i) => (
-        <td key={i} className="p-3">
-          <div className="h-4 w-24 rounded bg-neutral-200/80 dark:bg-neutral-700" />
-        </td>
-      ))}
-    </tr>
-  );
+type FormKind = ExerciseKind;
+
+const KIND_OPTIONS: Array<{ value: FormKind; label: string }> = [
+  { value: "keyboard_note", label: "Keyboard Note" },
+  { value: "staff_note", label: "Staff Note" },
+  { value: "ear_interval", label: "Ear Interval" },
+  { value: "scale_construction", label: "Scale Construction" },
+  { value: "chord_identification", label: "Chord Identification" },
+];
+
+function defaultConfig(kind: FormKind): ExerciseTemplateConfig {
+  switch (kind) {
+    case "keyboard_note":
+      return {
+        skillCode: "keyboard-geo-1",
+        levelIndex: 1,
+        generator: kind,
+        constraints: {
+          notes: ["C", "D", "E", "F", "G", "A", "B"],
+          octaves: [3, 4, 5],
+          accidentals: ["natural"],
+          inputMode: "single-note",
+        },
+        presentation: {
+          instructions: "Toca la nota indicada en el teclado.",
+          keyboardRange: [48, 84],
+          attemptsAllowed: 4,
+        },
+        mastery: { minAttempts: 10, minAccuracy: 0.85, minStreak: 3 },
+      };
+    case "staff_note":
+      return {
+        skillCode: "staff-reading-1",
+        levelIndex: 1,
+        generator: kind,
+        constraints: {
+          clef: "treble",
+          range: { minMidi: 64, maxMidi: 79 },
+          accidentals: ["natural"],
+          ledgerLines: false,
+        },
+        presentation: {
+          instructions: "Observa el pentagrama y toca la nota correcta.",
+          keyboardRange: [55, 84],
+          showStaff: true,
+          clef: "treble",
+          attemptsAllowed: 4,
+        },
+        mastery: { minAttempts: 10, minAccuracy: 0.85, minStreak: 3 },
+      };
+    case "ear_interval":
+      return {
+        skillCode: "ear-interval-1",
+        levelIndex: 1,
+        generator: kind,
+        constraints: {
+          intervalSet: ["m2", "M2", "m3", "M3", "P4", "P5"],
+          direction: "ascending",
+          playMode: "melodic",
+          range: { minMidi: 60, maxMidi: 72 },
+        },
+        presentation: {
+          instructions: "Escucha el intervalo y selecciona la respuesta correcta.",
+          autoReplay: true,
+          allowReplay: true,
+          attemptsAllowed: 4,
+        },
+        mastery: { minAttempts: 10, minAccuracy: 0.85, minStreak: 3 },
+      };
+    case "scale_construction":
+      return {
+        skillCode: "scale-construction-1",
+        levelIndex: 1,
+        generator: kind,
+        constraints: {
+          roots: ["C", "G", "D", "F"],
+          mode: "major",
+          octave: 4,
+          answerStyle: "keyboard",
+        },
+        presentation: {
+          instructions: "Construye la escala completa.",
+          keyboardRange: [48, 84],
+          attemptsAllowed: 4,
+        },
+        mastery: { minAttempts: 10, minAccuracy: 0.85, minStreak: 3 },
+      };
+    case "chord_identification":
+      return {
+        skillCode: "chord-identification-1",
+        levelIndex: 1,
+        generator: kind,
+        constraints: {
+          qualities: ["maj", "min"],
+          inversions: [0],
+          voicing: "close",
+          range: { minMidi: 48, maxMidi: 60 },
+          requireName: false,
+          requireInversion: false,
+        },
+        presentation: {
+          instructions: "Identifica el acorde completo.",
+          keyboardRange: [48, 84],
+          showStaff: true,
+          clef: "treble",
+          autoReplay: true,
+          allowReplay: true,
+          attemptsAllowed: 4,
+        },
+        mastery: { minAttempts: 10, minAccuracy: 0.85, minStreak: 3 },
+      };
+  }
 }
 
 export default function AdminPage() {
@@ -86,341 +155,483 @@ export default function AdminPage() {
 
 function AdminCatalogView() {
   const qc = useQueryClient();
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["admin-sections-full"],
+  const { data, isLoading } = useQuery({
+    queryKey: ["adminCatalog"],
     queryFn: listSectionsFull,
   });
 
-  // -------- Mutations --------
-  const mUpsertSection = useMutation({
-    mutationFn: upsertSection,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-sections-full"] }),
-  });
-  const mDeleteSection = useMutation({
-    mutationFn: deleteSection,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-sections-full"] }),
-  });
-
-  const mUpsertTopic = useMutation({
-    mutationFn: upsertTopic,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-sections-full"] }),
-  });
-  const mDeleteTopic = useMutation({
-    mutationFn: deleteTopic,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-sections-full"] }),
-  });
-
-  const mUpsertEx = useMutation({
-    mutationFn: upsertExercise,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-sections-full"] }),
-  });
-  const mToggleEx = useMutation({
-    mutationFn: ({ id, is_active }: { id: number; is_active: boolean }) => toggleExercise(id, is_active),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-sections-full"] }),
-  });
-  const mDeleteEx = useMutation({
-    mutationFn: deleteExercise,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-sections-full"] }),
-  });
-
-  const mSeed = useMutation({
-    mutationFn: seedBasic,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-sections-full"] }),
-  });
-
-  // -------- Local form state --------
-  const [secForm, setSecForm] = useState({ code: "", title: "", description: "" });
+  const [sectionForm, setSectionForm] = useState({ code: "", title: "", description: "" });
   const [topicForm, setTopicForm] = useState({ section_id: 0, code: "", title: "", description: "" });
-  const [exForm, setExForm] = useState({ section_id: 0, topic_id: 0, kind: "", title: "", is_active: true, configText: "{}" });
+  const [kind, setKind] = useState<FormKind>("keyboard_note");
+  const [exerciseTitle, setExerciseTitle] = useState("Nuevo ejercicio");
+  const [exerciseSectionId, setExerciseSectionId] = useState(0);
+  const [exerciseTopicId, setExerciseTopicId] = useState(0);
+  const [exerciseConfig, setExerciseConfig] = useState<ExerciseTemplateConfig>(() => defaultConfig("keyboard_note"));
+  const [preview, setPreview] = useState<PreviewSample[]>([]);
 
-  const sections = data?.sections ?? [];
-  const topics = data?.topics ?? [];
-  const exercises = data?.exercises ?? [];
-
+  const sections = useMemo(() => data?.sections ?? [], [data?.sections]);
+  const topics = useMemo(() => data?.topics ?? [], [data?.topics]);
+  const exercises = useMemo(() => data?.exercises ?? [], [data?.exercises]);
   const topicsBySection = useMemo(() => {
-    const map: Record<number, { id: number; title: string }[]> = {};
-    topics.forEach((t) => {
-      if (!map[t.section_id]) map[t.section_id] = [];
-      map[t.section_id].push({ id: t.id, title: t.title });
+    const map: Record<number, typeof topics> = {};
+    topics.forEach((topic) => {
+      map[topic.section_id] ??= [];
+      map[topic.section_id].push(topic);
     });
     return map;
   }, [topics]);
 
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["adminCatalog"] });
+
+  const saveSection = useMutation({
+    mutationFn: upsertSection,
+    onSuccess: invalidate,
+  });
+  const saveTopic = useMutation({
+    mutationFn: upsertTopic,
+    onSuccess: invalidate,
+  });
+  const saveExercise = useMutation({
+    mutationFn: upsertExercise,
+    onSuccess: () => {
+      setPreview([]);
+      invalidate();
+    },
+  });
+  const previewMutation = useMutation({
+    mutationFn: () => previewExercise(kind, exerciseTitle, exerciseConfig),
+    onSuccess: (result) => setPreview(result),
+  });
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, is_active }: { id: number; is_active: boolean }) => toggleExercise(id, is_active),
+    onSuccess: invalidate,
+  });
+  const deleteExerciseMutation = useMutation({
+    mutationFn: deleteExercise,
+    onSuccess: invalidate,
+  });
+  const deleteSectionMutation = useMutation({
+    mutationFn: deleteSection,
+    onSuccess: invalidate,
+  });
+  const deleteTopicMutation = useMutation({
+    mutationFn: deleteTopic,
+    onSuccess: invalidate,
+  });
+  const seedMutation = useMutation({
+    mutationFn: seedBasic,
+    onSuccess: invalidate,
+  });
+
+  function setCommon<K extends keyof ExerciseTemplateConfig>(key: K, value: ExerciseTemplateConfig[K]) {
+    setExerciseConfig((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function patchConstraints(partial: Record<string, unknown>) {
+    setExerciseConfig((prev) => ({
+      ...prev,
+      constraints: { ...prev.constraints, ...partial } as ExerciseTemplateConfig["constraints"],
+    }) as ExerciseTemplateConfig);
+  }
+
+  function updateKind(nextKind: FormKind) {
+    const nextConfig = defaultConfig(nextKind);
+    setKind(nextKind);
+    setExerciseConfig(nextConfig);
+    setExerciseTitle(KIND_OPTIONS.find((item) => item.value === nextKind)?.label ?? "Nuevo ejercicio");
+  }
+
   return (
-    <div className="min-h-[calc(100vh-64px)]">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-10 border-b border-neutral-200/70 dark:border-neutral-800/70 bg-white/75 dark:bg-neutral-950/75 backdrop-blur">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+    <main className="min-h-[calc(100vh-3.5rem)] bg-[radial-gradient(circle_at_top,#162f5d_0%,#0c1428_38%,#070c18_100%)] px-4 py-8 text-white">
+      <div className="mx-auto flex max-w-7xl flex-col gap-8">
+        <header className="flex flex-wrap items-center justify-between gap-3 rounded-[28px] border border-white/10 bg-white/5 p-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Admin Catalog</h1>
-            <p className="text-xs text-neutral-500">Gestiona sections, topics y ejercicios</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-cyan-300/70">Admin Catalog</p>
+            <h1 className="mt-2 text-3xl font-semibold">Plantillas pedagógicas</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => mSeed.mutate()} disabled={mSeed.isPending}>
-              {mSeed.isPending ? "Seeding…" : "Seed básico"}
-            </Button>
-            <Button variant="ghost" onClick={() => qc.invalidateQueries({ queryKey: ["admin-sections-full"] })}>
+          <div className="flex gap-3">
+            <button onClick={() => seedMutation.mutate()} className="rounded-2xl border border-white/15 px-4 py-2 text-sm hover:bg-white/5">
+              {seedMutation.isPending ? "Seeding…" : "Seed básico"}
+            </button>
+            <button onClick={() => invalidate()} className="rounded-2xl bg-cyan-300 px-4 py-2 text-sm font-medium text-slate-950">
               Refrescar
-            </Button>
+            </button>
+          </div>
+        </header>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <Panel title="Sections">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Input label="Code" value={sectionForm.code} onChange={(value) => setSectionForm((prev) => ({ ...prev, code: value }))} />
+              <Input label="Title" value={sectionForm.title} onChange={(value) => setSectionForm((prev) => ({ ...prev, title: value }))} />
+              <Input label="Description" value={sectionForm.description} onChange={(value) => setSectionForm((prev) => ({ ...prev, description: value }))} />
+            </div>
+            <div className="mt-4">
+              <button
+                onClick={() => saveSection.mutate(sectionForm)}
+                className="rounded-2xl bg-cyan-300 px-4 py-2 text-sm font-medium text-slate-950"
+              >
+                Guardar section
+              </button>
+            </div>
+            <Table
+              headers={["ID", "Code", "Title", "Actions"]}
+              rows={sections.map((section) => [
+                section.id,
+                section.code,
+                section.title,
+                <button
+                  key={`delete-section-${section.id}`}
+                  onClick={() => deleteSectionMutation.mutate(section.id)}
+                  className="rounded-xl border border-red-300/20 px-3 py-1 text-xs text-red-200"
+                >
+                  Eliminar
+                </button>,
+              ])}
+            />
+          </Panel>
+
+          <Panel title="Topics">
+            <div className="grid gap-3 sm:grid-cols-4">
+              <SelectField
+                label="Section"
+                value={String(topicForm.section_id)}
+                onChange={(value) => setTopicForm((prev) => ({ ...prev, section_id: Number(value) }))}
+                options={[{ value: "0", label: "Selecciona…" }, ...sections.map((section) => ({ value: String(section.id), label: section.title }))]}
+              />
+              <Input label="Code" value={topicForm.code} onChange={(value) => setTopicForm((prev) => ({ ...prev, code: value }))} />
+              <Input label="Title" value={topicForm.title} onChange={(value) => setTopicForm((prev) => ({ ...prev, title: value }))} />
+              <Input label="Description" value={topicForm.description} onChange={(value) => setTopicForm((prev) => ({ ...prev, description: value }))} />
+            </div>
+            <div className="mt-4">
+              <button
+                onClick={() => saveTopic.mutate(topicForm)}
+                className="rounded-2xl bg-cyan-300 px-4 py-2 text-sm font-medium text-slate-950"
+              >
+                Guardar topic
+              </button>
+            </div>
+            <Table
+              headers={["ID", "Code", "Title", "Actions"]}
+              rows={topics.map((topic) => [
+                topic.id,
+                topic.code,
+                topic.title,
+                <button
+                  key={`delete-topic-${topic.id}`}
+                  onClick={() => deleteTopicMutation.mutate(topic.id)}
+                  className="rounded-xl border border-red-300/20 px-3 py-1 text-xs text-red-200"
+                >
+                  Eliminar
+                </button>,
+              ])}
+            />
+          </Panel>
+        </section>
+
+        <Panel title="Exercise Templates">
+          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <SelectField
+                  label="Kind"
+                  value={kind}
+                  onChange={(value) => updateKind(value as FormKind)}
+                  options={KIND_OPTIONS.map((item) => ({ value: item.value, label: item.label }))}
+                />
+                <Input label="Title" value={exerciseTitle} onChange={setExerciseTitle} />
+                <SelectField
+                  label="Section"
+                  value={String(exerciseSectionId)}
+                  onChange={(value) => {
+                    setExerciseSectionId(Number(value));
+                    setExerciseTopicId(0);
+                  }}
+                  options={[{ value: "0", label: "Selecciona…" }, ...sections.map((section) => ({ value: String(section.id), label: section.title }))]}
+                />
+                <SelectField
+                  label="Topic"
+                  value={String(exerciseTopicId)}
+                  onChange={(value) => setExerciseTopicId(Number(value))}
+                  options={[{ value: "0", label: "Selecciona…" }, ...(topicsBySection[exerciseSectionId] ?? []).map((topic) => ({ value: String(topic.id), label: topic.title }))]}
+                />
+                <Input label="Skill code" value={exerciseConfig.skillCode} onChange={(value) => setCommon("skillCode", value)} />
+                <Input
+                  label="Level index"
+                  value={String(exerciseConfig.levelIndex)}
+                  onChange={(value) => setCommon("levelIndex", Number(value))}
+                  type="number"
+                />
+              </div>
+
+              <KindFields kind={kind} config={exerciseConfig} patchConstraints={patchConstraints} />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input
+                  label="Intentos"
+                  value={String(exerciseConfig.presentation.attemptsAllowed ?? 4)}
+                  onChange={(value) =>
+                    setExerciseConfig((prev) => ({
+                      ...prev,
+                      presentation: { ...prev.presentation, attemptsAllowed: Number(value) },
+                    }))
+                  }
+                  type="number"
+                />
+                <Input
+                  label="Instructions"
+                  value={exerciseConfig.presentation.instructions ?? ""}
+                  onChange={(value) =>
+                    setExerciseConfig((prev) => ({
+                      ...prev,
+                      presentation: { ...prev.presentation, instructions: value },
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() =>
+                    saveExercise.mutate({
+                      section_id: exerciseSectionId,
+                      topic_id: exerciseTopicId || null,
+                      kind,
+                      title: exerciseTitle,
+                      config: exerciseConfig,
+                      is_active: true,
+                    })
+                  }
+                  className="rounded-2xl bg-cyan-300 px-4 py-2 text-sm font-medium text-slate-950"
+                >
+                  Guardar plantilla
+                </button>
+                <button
+                  onClick={() => previewMutation.mutate()}
+                  className="rounded-2xl border border-white/15 px-4 py-2 text-sm hover:bg-white/5"
+                >
+                  Preview 3 seeds
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-[24px] border border-white/10 bg-black/20 p-5">
+              <p className="text-sm font-medium text-white/80">Preview</p>
+              {!preview.length && <p className="text-sm text-white/55">Genera preview para validar prompts y soluciones antes de guardar.</p>}
+              {preview.map((sample) => (
+                <div key={sample.seed} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
+                  <div className="text-xs uppercase tracking-[0.2em] text-cyan-300/70">Seed {sample.seed}</div>
+                  <div className="mt-2 font-medium">{String(sample.prompt.text ?? "")}</div>
+                  <pre className="mt-3 overflow-auto rounded-xl bg-black/25 p-3 text-xs text-white/70">
+                    {JSON.stringify(sample.solution, null, 2)}
+                  </pre>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Table
+            headers={["ID", "Kind", "Title", "Skill", "Level", "Actions"]}
+            rows={exercises.map((exercise) => [
+              exercise.id,
+              exercise.kind,
+              exercise.title,
+              exercise.config.skillCode,
+              exercise.config.levelIndex,
+              <div key={`actions-${exercise.id}`} className="flex gap-2">
+                <button
+                  onClick={() => toggleMutation.mutate({ id: exercise.id, is_active: !exercise.is_active })}
+                  className="rounded-xl border border-white/15 px-3 py-1 text-xs"
+                >
+                  {exercise.is_active ? "Desactivar" : "Activar"}
+                </button>
+                <button
+                  onClick={() => deleteExerciseMutation.mutate(exercise.id)}
+                  className="rounded-xl border border-red-300/20 px-3 py-1 text-xs text-red-200"
+                >
+                  Eliminar
+                </button>
+              </div>,
+            ])}
+          />
+        </Panel>
+
+        {isLoading && <div className="text-sm text-white/60">Cargando catálogo…</div>}
+      </div>
+    </main>
+  );
+}
+
+function KindFields({
+  kind,
+  config,
+  patchConstraints,
+}: {
+  kind: FormKind;
+  config: ExerciseTemplateConfig;
+  patchConstraints: (partial: Record<string, unknown>) => void;
+}) {
+  switch (kind) {
+    case "keyboard_note": {
+      const current = config as Extract<ExerciseTemplateConfig, { generator: "keyboard_note" }>;
+      return (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Input label="Notes" value={current.constraints.notes.join(", ")} onChange={(value) => patchConstraints({ notes: splitCSV(value) })} />
+          <Input label="Octaves" value={current.constraints.octaves.join(", ")} onChange={(value) => patchConstraints({ octaves: splitCSV(value).map(Number) })} />
+          <Input
+            label="Accidentals"
+            value={current.constraints.accidentals.join(", ")}
+            onChange={(value) => patchConstraints({ accidentals: splitCSV(value) })}
+          />
+        </div>
+      );
+    }
+    case "staff_note": {
+      const current = config as Extract<ExerciseTemplateConfig, { generator: "staff_note" }>;
+      return (
+        <div className="grid gap-3 sm:grid-cols-4">
+          <Input label="Min midi" value={String(current.constraints.range.minMidi)} onChange={(value) => patchConstraints({ range: { ...current.constraints.range, minMidi: Number(value) } })} type="number" />
+          <Input label="Max midi" value={String(current.constraints.range.maxMidi)} onChange={(value) => patchConstraints({ range: { ...current.constraints.range, maxMidi: Number(value) } })} type="number" />
+          <Input label="Accidentals" value={current.constraints.accidentals.join(", ")} onChange={(value) => patchConstraints({ accidentals: splitCSV(value) })} />
+          <ToggleField label="Ledger lines" checked={current.constraints.ledgerLines} onChange={(value) => patchConstraints({ ledgerLines: value })} />
+        </div>
+      );
+    }
+    case "ear_interval": {
+      const current = config as Extract<ExerciseTemplateConfig, { generator: "ear_interval" }>;
+      return (
+        <div className="grid gap-3 sm:grid-cols-5">
+          <Input label="Interval set" value={current.constraints.intervalSet.join(", ")} onChange={(value) => patchConstraints({ intervalSet: splitCSV(value) })} />
+          <SelectField label="Direction" value={current.constraints.direction} onChange={(value) => patchConstraints({ direction: value })} options={[{ value: "ascending", label: "Ascending" }, { value: "descending", label: "Descending" }, { value: "both", label: "Both" }]} />
+          <SelectField label="Play mode" value={current.constraints.playMode} onChange={(value) => patchConstraints({ playMode: value })} options={[{ value: "melodic", label: "Melodic" }, { value: "harmonic", label: "Harmonic" }]} />
+          <Input label="Min midi" value={String(current.constraints.range.minMidi)} onChange={(value) => patchConstraints({ range: { ...current.constraints.range, minMidi: Number(value) } })} type="number" />
+          <Input label="Max midi" value={String(current.constraints.range.maxMidi)} onChange={(value) => patchConstraints({ range: { ...current.constraints.range, maxMidi: Number(value) } })} type="number" />
+        </div>
+      );
+    }
+    case "scale_construction": {
+      const current = config as Extract<ExerciseTemplateConfig, { generator: "scale_construction" }>;
+      return (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Input label="Roots" value={current.constraints.roots.join(", ")} onChange={(value) => patchConstraints({ roots: splitCSV(value) })} />
+          <SelectField label="Mode" value={current.constraints.mode} onChange={(value) => patchConstraints({ mode: value })} options={[{ value: "major", label: "Major" }, { value: "ionian", label: "Ionian" }]} />
+          <Input label="Octave" value={String(current.constraints.octave)} onChange={(value) => patchConstraints({ octave: Number(value) })} type="number" />
+        </div>
+      );
+    }
+    case "chord_identification": {
+      const current = config as Extract<ExerciseTemplateConfig, { generator: "chord_identification" }>;
+      return (
+        <div className="grid gap-3 sm:grid-cols-6">
+          <Input label="Qualities" value={current.constraints.qualities.join(", ")} onChange={(value) => patchConstraints({ qualities: splitCSV(value) })} />
+          <Input label="Inversions" value={current.constraints.inversions.join(", ")} onChange={(value) => patchConstraints({ inversions: splitCSV(value).map(Number) })} />
+          <SelectField label="Voicing" value={current.constraints.voicing} onChange={(value) => patchConstraints({ voicing: value })} options={[{ value: "close", label: "Close" }, { value: "open", label: "Open" }, { value: "mixed", label: "Mixed" }]} />
+          <Input label="Min midi" value={String(current.constraints.range.minMidi)} onChange={(value) => patchConstraints({ range: { ...current.constraints.range, minMidi: Number(value) } })} type="number" />
+          <Input label="Max midi" value={String(current.constraints.range.maxMidi)} onChange={(value) => patchConstraints({ range: { ...current.constraints.range, maxMidi: Number(value) } })} type="number" />
+          <div className="grid gap-2">
+            <ToggleField label="Require name" checked={current.constraints.requireName} onChange={(value) => patchConstraints({ requireName: value })} />
+            <ToggleField label="Require inversion" checked={current.constraints.requireInversion} onChange={(value) => patchConstraints({ requireInversion: value })} />
           </div>
         </div>
-      </div>
+      );
+    }
+  }
+}
 
-      <main className="mx-auto max-w-7xl px-6 py-8 space-y-8">
-        {/* Sections */}
-        <Card title="Sections" subtitle="Crea y administra las secciones principales" right={<Badge>{sections.length} total</Badge>}>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="space-y-1">
-              <Label>Code</Label>
-              <Input placeholder="basic" value={secForm.code} onChange={(e) => setSecForm({ ...secForm, code: e.target.value })} />
-            </div>
-            <div className="space-y-1 md:col-span-1">
-              <Label>Title</Label>
-              <Input placeholder="Básico" value={secForm.title} onChange={(e) => setSecForm({ ...secForm, title: e.target.value })} />
-            </div>
-            <div className="space-y-1 md:col-span-2">
-              <Label>Description</Label>
-              <Input placeholder="Fundamentos…" value={secForm.description} onChange={(e) => setSecForm({ ...secForm, description: e.target.value })} />
-            </div>
-          </div>
-          <div className="mt-3">
-            <Button onClick={() => mUpsertSection.mutate(secForm)} disabled={mUpsertSection.isPending}>
-              {mUpsertSection.isPending ? "Guardando…" : "Guardar section"}
-            </Button>
-          </div>
+function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
 
-          <div className="mt-6 overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800">
-            <table className="min-w-full text-sm">
-              <thead className="bg-neutral-50/70 dark:bg-neutral-900/50">
-                <tr>
-                  <th className="p-3 text-left font-medium">ID</th>
-                  <th className="p-3 text-left font-medium">Code</th>
-                  <th className="p-3 text-left font-medium">Title</th>
-                  <th className="p-3 text-left font-medium">Description</th>
-                  <th className="p-3 text-center font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {isLoading && Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} cols={5} />)}
-                {!isLoading &&
-                  sections.map((s, idx) => (
-                    <tr key={s.id} className={idx % 2 ? "bg-white dark:bg-neutral-950" : "bg-neutral-50/30 dark:bg-neutral-900/30"}>
-                      <td className="p-3">{s.id}</td>
-                      <td className="p-3">{s.code}</td>
-                      <td className="p-3">{s.title}</td>
-                      <td className="p-3">{s.description}</td>
-                      <td className="p-3 text-center">
-                        <Button variant="danger" onClick={() => window.confirm("¿Eliminar section?") && mDeleteSection.mutate(s.id)}>
-                          Eliminar
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+function Input({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+}) {
+  return (
+    <label className="space-y-1 text-sm">
+      <span className="text-white/70">{label}</span>
+      <input value={value} type={type} onChange={(event) => onChange(event.target.value)} className="h-11 w-full rounded-2xl border border-white/10 bg-white/5 px-3 outline-none focus:ring-2 focus:ring-cyan-300/40" />
+    </label>
+  );
+}
 
-        {/* Topics */}
-        <Card title="Topics" subtitle="Agrupa contenidos dentro de una sección" right={<Badge>{topics.length} total</Badge>}>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            <div className="space-y-1 md:col-span-1">
-              <Label>Section</Label>
-              <Select value={topicForm.section_id} onChange={(e) => setTopicForm({ ...topicForm, section_id: Number(e.target.value) })}>
-                <option value={0}>Selecciona…</option>
-                {sections.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.title} (#{s.id})
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Code</Label>
-              <Input placeholder="ear-training" value={topicForm.code} onChange={(e) => setTopicForm({ ...topicForm, code: e.target.value })} />
-            </div>
-            <div className="space-y-1">
-              <Label>Title</Label>
-              <Input placeholder="Entrenamiento de oído" value={topicForm.title} onChange={(e) => setTopicForm({ ...topicForm, title: e.target.value })} />
-            </div>
-            <div className="space-y-1 md:col-span-2">
-              <Label>Description</Label>
-              <Input placeholder="…" value={topicForm.description} onChange={(e) => setTopicForm({ ...topicForm, description: e.target.value })} />
-            </div>
-          </div>
-          <div className="mt-3">
-            <Button onClick={() => mUpsertTopic.mutate(topicForm)} disabled={mUpsertTopic.isPending}>
-              {mUpsertTopic.isPending ? "Guardando…" : "Guardar topic"}
-            </Button>
-          </div>
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <label className="space-y-1 text-sm">
+      <span className="text-white/70">{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="h-11 w-full rounded-2xl border border-white/10 bg-white/5 px-3 outline-none focus:ring-2 focus:ring-cyan-300/40">
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
-          <div className="mt-6 overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800">
-            <table className="min-w-full text-sm">
-              <thead className="bg-neutral-50/70 dark:bg-neutral-900/50">
-                <tr>
-                  <th className="p-3 text-left font-medium">ID</th>
-                  <th className="p-3 text-left font-medium">Section</th>
-                  <th className="p-3 text-left font-medium">Code</th>
-                  <th className="p-3 text-left font-medium">Title</th>
-                  <th className="p-3 text-center font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {isLoading && Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} cols={5} />)}
-                {!isLoading &&
-                  topics.map((t, idx) => (
-                    <tr key={t.id} className={idx % 2 ? "bg-white dark:bg-neutral-950" : "bg-neutral-50/30 dark:bg-neutral-900/30"}>
-                      <td className="p-3">{t.id}</td>
-                      <td className="p-3">#{t.section_id}</td>
-                      <td className="p-3">{t.code}</td>
-                      <td className="p-3">{t.title}</td>
-                      <td className="p-3 text-center">
-                        <Button variant="danger" onClick={() => window.confirm("¿Eliminar topic?") && mDeleteTopic.mutate(t.id)}>
-                          Eliminar
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+function ToggleField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 text-sm text-white/70">
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-cyan-300" />
+      <span>{label}</span>
+    </label>
+  );
+}
 
-        {/* Exercises */}
-        <Card title="Exercises" subtitle="Crea ejercicios y activa/desactiva" right={<Badge>{exercises.length} total</Badge>}>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-            <div className="space-y-1">
-              <Label>Section</Label>
-              <Select
-                value={exForm.section_id}
-                onChange={(e) => {
-                  const section_id = Number(e.target.value);
-                  setExForm((f) => ({ ...f, section_id, topic_id: 0 }));
-                }}
-              >
-                <option value={0}>Selecciona…</option>
-                {sections.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.title} (#{s.id})
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            <div className="space-y-1">
-              <Label>Topic (opcional)</Label>
-              <Select value={exForm.topic_id} onChange={(e) => setExForm({ ...exForm, topic_id: Number(e.target.value) })}>
-                <option value={0}>—</option>
-                {(topicsBySection[exForm.section_id] ?? []).map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title} (#{t.id})
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            <div className="space-y-1">
-              <Label>Kind</Label>
-              <Input placeholder="ear_intervals" value={exForm.kind} onChange={(e) => setExForm({ ...exForm, kind: e.target.value })} />
-            </div>
-
-            <div className="space-y-1 md:col-span-2">
-              <Label>Title</Label>
-              <Input placeholder="Intervalos simples" value={exForm.title} onChange={(e) => setExForm({ ...exForm, title: e.target.value })} />
-            </div>
-
-            <div className="flex items-end gap-2">
-              <input
-                id="isActive"
-                type="checkbox"
-                className="h-4 w-4 accent-blue-600"
-                checked={exForm.is_active}
-                onChange={(e) => setExForm({ ...exForm, is_active: e.target.checked })}
-              />
-              <Label>Activo</Label>
-            </div>
-
-            <div className="space-y-1 md:col-span-6">
-              <Label>Config (JSON)</Label>
-              <Input
-                placeholder='{"range":"C4-B4","set":["m2","M2"]}'
-                value={exForm.configText}
-                onChange={(e) => setExForm({ ...exForm, configText: e.target.value })}
-                className="font-mono"
-              />
-            </div>
-          </div>
-
-          <div className="mt-3">
-            <Button
-              onClick={() => {
-                let cfg: any = undefined;
-                try {
-                  cfg = JSON.parse(exForm.configText);
-                } catch {
-                  alert("Config no es JSON válido");
-                  return;
-                }
-                mUpsertEx.mutate({
-                  section_id: exForm.section_id,
-                  topic_id: exForm.topic_id || null,
-                  kind: exForm.kind,
-                  title: exForm.title,
-                  is_active: exForm.is_active,
-                  config: cfg,
-                });
-              }}
-              disabled={mUpsertEx.isPending}
-            >
-              {mUpsertEx.isPending ? "Guardando…" : "Guardar ejercicio"}
-            </Button>
-          </div>
-
-          <div className="mt-6 overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800">
-            <table className="min-w-full text-sm">
-              <thead className="bg-neutral-50/70 dark:bg-neutral-900/50">
-                <tr>
-                  <th className="p-3 text-left font-medium">ID</th>
-                  <th className="p-3 text-left font-medium">Section</th>
-                  <th className="p-3 text-left font-medium">Topic</th>
-                  <th className="p-3 text-left font-medium">Kind</th>
-                  <th className="p-3 text-left font-medium">Title</th>
-                  <th className="p-3 text-center font-medium">Estado</th>
-                  <th className="p-3 text-center font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {isLoading && Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} cols={7} />)}
-                {!isLoading &&
-                  exercises.map((e, idx) => (
-                    <tr key={e.id} className={idx % 2 ? "bg-white dark:bg-neutral-950" : "bg-neutral-50/30 dark:bg-neutral-900/30"}>
-                      <td className="p-3">#{e.id}</td>
-                      <td className="p-3">#{e.section_id}</td>
-                      <td className="p-3">{e.topic_id ?? "—"}</td>
-                      <td className="p-3">{e.kind}</td>
-                      <td className="p-3">{e.title}</td>
-                      <td className="p-3 text-center">{e.is_active ? <Badge color="green">Activo</Badge> : <Badge>Inactivo</Badge>}</td>
-                      <td className="p-3 text-center space-x-2">
-                        <Button variant="ghost" onClick={() => mToggleEx.mutate({ id: e.id, is_active: !e.is_active })}>
-                          {e.is_active ? "Desactivar" : "Activar"}
-                        </Button>
-                        <Button variant="danger" onClick={() => window.confirm("¿Eliminar ejercicio?") && mDeleteEx.mutate(e.id)}>
-                          Eliminar
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {error && (
-          <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-4 text-sm text-red-700 dark:text-red-300">
-            Error: {(error as any).message}
-          </div>
-        )}
-      </main>
+function Table({ headers, rows }: { headers: string[]; rows: Array<Array<React.ReactNode>> }) {
+  return (
+    <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
+      <table className="min-w-full text-left text-sm">
+        <thead className="bg-white/5">
+          <tr>
+            {headers.map((header) => (
+              <th key={header} className="px-4 py-3 font-medium text-white/70">
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr key={rowIndex} className="border-t border-white/10">
+              {row.map((cell, cellIndex) => (
+                <td key={cellIndex} className="px-4 py-3 align-top">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
+}
+
+function splitCSV(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }

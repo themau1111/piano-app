@@ -1,28 +1,33 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
+import { AdminCatalogData, ExerciseTemplateConfig } from "@/lib/exercises/contracts";
 import { supabase } from "../supabaseClient";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-async function authFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) throw new Error("No session");
-  const res = await fetch(`${BASE}${url}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-      ...(init?.headers || {}),
-    },
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+async function getAccessToken() {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
 }
 
-// --- DTOs (ligeros) ---
+async function authFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No session");
+
+  const headers = new Headers(init?.headers);
+  headers.set("Authorization", `Bearer ${token}`);
+  if (init?.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const res = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers,
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json() as Promise<T>;
+}
+
 export type SectionUpsertDto = { code: string; title: string; description?: string };
 export type TopicUpsertDto = { section_id: number; code: string; title: string; description?: string };
 export type ExerciseUpsertDto = {
@@ -30,43 +35,43 @@ export type ExerciseUpsertDto = {
   topic_id?: number | null;
   kind: string;
   title: string;
-  config?: any; // puedes pasar objeto y lo stringifyeo abajo
+  config: ExerciseTemplateConfig;
   is_active?: boolean;
 };
 
-export type AdminCatalogData = {
-  sections: { id: number; code: string; title: string; description?: string }[];
-  topics: { id: number; section_id: number; code: string; title: string; description?: string }[];
-  exercises: { id: number; section_id: number; topic_id: number | null; kind: string; title: string; config: any; is_active: boolean }[];
-};
-
-// --- Queries ---
-export const listSectionsFull = () => authFetch<AdminCatalogData>("/admin/sections", { method: "GET" });
-
-// --- Mutations: Sections ---
-export const upsertSection = (dto: SectionUpsertDto) => authFetch("/admin/sections", { method: "POST", body: JSON.stringify(dto) });
-
-export const deleteSection = (id: number) => authFetch(`/admin/sections/${id}`, { method: "DELETE" });
-
-// --- Mutations: Topics ---
-export const upsertTopic = (dto: TopicUpsertDto) => authFetch("/admin/topics", { method: "POST", body: JSON.stringify(dto) });
-
-export const deleteTopic = (id: number) => authFetch(`/admin/topics/${id}`, { method: "DELETE" });
-
-// --- Mutations: Exercises ---
+export const listSectionsFull = () => authFetch<AdminCatalogData>("/admin/sections");
+export const upsertSection = (dto: SectionUpsertDto) =>
+  authFetch("/admin/sections", { method: "POST", body: JSON.stringify(dto) });
+export const deleteSection = (id: number) =>
+  authFetch(`/admin/sections/${id}`, { method: "DELETE" });
+export const upsertTopic = (dto: TopicUpsertDto) =>
+  authFetch("/admin/topics", { method: "POST", body: JSON.stringify(dto) });
+export const deleteTopic = (id: number) =>
+  authFetch(`/admin/topics/${id}`, { method: "DELETE" });
 export const upsertExercise = (dto: ExerciseUpsertDto) =>
   authFetch("/admin/exercises", {
     method: "POST",
-    body: JSON.stringify({ ...dto, config: dto.config ? JSON.stringify(dto.config) : undefined }),
+    body: JSON.stringify({ ...dto, config: JSON.stringify(dto.config) }),
   });
-
+export const previewExercise = (kind: string, title: string, config: ExerciseTemplateConfig) =>
+  authFetch<
+    Array<{
+      seed: number;
+      prompt: Record<string, unknown>;
+      input: Record<string, unknown>;
+      presentation: Record<string, unknown>;
+      solution: Record<string, unknown>;
+    }>
+  >("/admin/exercises/preview", {
+    method: "POST",
+    body: JSON.stringify({ kind, title, config: JSON.stringify(config) }),
+  });
 export const toggleExercise = (id: number, is_active: boolean) =>
   authFetch(`/admin/exercises/${id}/active`, {
     method: "PATCH",
     body: JSON.stringify({ is_active }),
   });
-
-export const deleteExercise = (id: number) => authFetch(`/admin/exercises/${id}`, { method: "DELETE" });
-
-// --- Seeds ---
-export const seedBasic = () => authFetch("/admin/seed/basic", { method: "POST" });
+export const deleteExercise = (id: number) =>
+  authFetch(`/admin/exercises/${id}`, { method: "DELETE" });
+export const seedBasic = () =>
+  authFetch("/admin/seed/basic", { method: "POST" });

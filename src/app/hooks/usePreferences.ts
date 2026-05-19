@@ -13,12 +13,17 @@ export function usePreferences() {
       try {
         const p = await getMyPreferences();
         if (p) {
+          const pref = p as Partial<Prefs> & {
+            practice?: Partial<Prefs["practice"]>;
+            gear?: Partial<Prefs["gear"]>;
+            notifications?: Partial<Prefs["notifications"]>;
+          };
           setData({
             ...DEFAULTS,
-            ...p,
-            practice: { ...DEFAULTS.practice, ...(p.practice ?? {}) },
-            gear: { ...DEFAULTS.gear, ...(p.gear ?? {}) },
-            notifications: { ...DEFAULTS.notifications, ...(p.notifications ?? {}) },
+            ...pref,
+            practice: { ...DEFAULTS.practice, ...(pref.practice ?? {}) },
+            gear: { ...DEFAULTS.gear, ...(pref.gear ?? {}) },
+            notifications: { ...DEFAULTS.notifications, ...(pref.notifications ?? {}) },
           });
         }
       } finally {
