@@ -40,6 +40,7 @@ export function IntervalBranchMap({ notes }: { notes: string[] }) {
   const nodeX = (index: number) => 48 + index * gap;
   const nodeY = 44;
   const height = 116 + branchPairs.length * 26;
+  const selectedPair = pairs.find((pair) => pair.id === selectedPairId) ?? null;
 
   function moveTooltip(pair: Pair, event: React.PointerEvent<SVGGElement>) {
     setSelectedPairId(pair.id);
@@ -49,6 +50,11 @@ export function IntervalBranchMap({ notes }: { notes: string[] }) {
   function clearTooltip() {
     setSelectedPairId(null);
     setTooltip(null);
+  }
+
+  function keepMobileSelection(event: React.PointerEvent<SVGGElement>) {
+    if (event.pointerType !== "mouse") return;
+    clearTooltip();
   }
 
   return (
@@ -68,7 +74,7 @@ export function IntervalBranchMap({ notes }: { notes: string[] }) {
             const endX = nodeX(pair.toIndex);
             const path = `M ${startX + 17} ${nodeY} H ${endX - 17}`;
             return (
-              <g key={pair.id} tabIndex={0} role="button" aria-label={`${pair.from} a ${pair.to}: ${pair.description}, ${pair.semitones} semitonos`} onPointerEnter={(event) => moveTooltip(pair, event)} onPointerMove={(event) => moveTooltip(pair, event)} onPointerLeave={clearTooltip} onFocus={() => setSelectedPairId(pair.id)} onBlur={clearTooltip}>
+              <g key={pair.id} tabIndex={0} role="button" aria-label={`${pair.from} a ${pair.to}: ${pair.description}, ${pair.semitones} semitonos`} onPointerEnter={(event) => moveTooltip(pair, event)} onPointerMove={(event) => moveTooltip(pair, event)} onPointerLeave={keepMobileSelection} onPointerDown={() => setSelectedPairId(pair.id)} onClick={() => setSelectedPairId(pair.id)} onFocus={() => setSelectedPairId(pair.id)} onBlur={clearTooltip}>
                 <path d={path} fill="none" stroke="rgba(165,243,252,0.9)" strokeWidth="3" strokeLinecap="round" />
                 <rect x={(startX + endX) / 2 - 18} y="19" width="36" height="20" rx="7" fill={selectedPairId === pair.id ? "#1f5475" : "#102b4d"} stroke="rgba(165,243,252,0.35)" />
                 <text x={(startX + endX) / 2} y="33" fill="#e6fbff" fontSize="12" fontWeight="700" textAnchor="middle">{pair.label}</text>
@@ -81,7 +87,7 @@ export function IntervalBranchMap({ notes }: { notes: string[] }) {
             const branchY = 72 + lane * 26;
             const path = `M ${startX + 11} ${nodeY + 9} L ${startX + 28} ${branchY} H ${endX - 28} L ${endX - 11} ${nodeY + 9}`;
             return (
-              <g key={pair.id} tabIndex={0} role="button" aria-label={`${pair.from} a ${pair.to}: ${pair.description}, ${pair.semitones} semitonos`} onPointerEnter={(event) => moveTooltip(pair, event)} onPointerMove={(event) => moveTooltip(pair, event)} onPointerLeave={clearTooltip} onFocus={() => setSelectedPairId(pair.id)} onBlur={clearTooltip}>
+              <g key={pair.id} tabIndex={0} role="button" aria-label={`${pair.from} a ${pair.to}: ${pair.description}, ${pair.semitones} semitonos`} onPointerEnter={(event) => moveTooltip(pair, event)} onPointerMove={(event) => moveTooltip(pair, event)} onPointerLeave={keepMobileSelection} onPointerDown={() => setSelectedPairId(pair.id)} onClick={() => setSelectedPairId(pair.id)} onFocus={() => setSelectedPairId(pair.id)} onBlur={clearTooltip}>
                 <path d={path} fill="none" stroke="rgba(165,243,252,0.66)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                 <rect x={(startX + endX) / 2 - 18} y={branchY - 11} width="36" height="20" rx="7" fill={selectedPairId === pair.id ? "#1f5475" : "#102b4d"} stroke="rgba(165,243,252,0.25)" />
                 <text x={(startX + endX) / 2} y={branchY + 3} fill="#d6f7ff" fontSize="12" fontWeight="700" textAnchor="middle">{pair.label}</text>
@@ -99,12 +105,18 @@ export function IntervalBranchMap({ notes }: { notes: string[] }) {
       </div>
       {tooltip && (
         <div
-          className="pointer-events-none fixed z-[80] -translate-y-[calc(100%+10px)] rounded-xl border border-cyan-200/50 bg-[linear-gradient(135deg,#163f61,#0a1f38)] px-3 py-2 text-xs text-cyan-50 shadow-[0_12px_32px_rgba(0,0,0,0.4)] before:absolute before:-bottom-1 before:left-4 before:h-2 before:w-2 before:rotate-45 before:border-b before:border-r before:border-cyan-200/50 before:bg-[#0a1f38]"
+          className="pointer-events-none fixed z-[80] hidden -translate-y-[calc(100%+10px)] rounded-xl border border-cyan-200/50 bg-[linear-gradient(135deg,#163f61,#0a1f38)] px-3 py-2 text-xs text-cyan-50 shadow-[0_12px_32px_rgba(0,0,0,0.4)] before:absolute before:-bottom-1 before:left-4 before:h-2 before:w-2 before:rotate-45 before:border-b before:border-r before:border-cyan-200/50 before:bg-[#0a1f38] md:block"
           style={{ left: tooltip.x + 12, top: tooltip.y - 8 }}
           role="status"
         >
           <span className="font-semibold">{tooltip.pair.from} → {tooltip.pair.to}: {tooltip.pair.label}</span>
           <span className="text-cyan-100/75"> · {tooltip.pair.description} · {tooltip.pair.semitones} semitonos</span>
+        </div>
+      )}
+      {selectedPair && (
+        <div className="mt-3 rounded-xl border border-cyan-200/25 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-50 md:hidden">
+          <strong>{selectedPair.from} → {selectedPair.to}: {selectedPair.label}</strong>
+          <span className="text-cyan-100/75"> · {selectedPair.description} · {selectedPair.semitones} semitonos</span>
         </div>
       )}
     </section>
