@@ -38,8 +38,12 @@ export function IntervalBranchMap({ notes }: { notes: string[] }) {
   const width = Math.max(360, (notes.length - 1) * gap + 96);
   const nodeX = (index: number) => 48 + index * gap;
   const nodeY = 44;
-  const height = 86 + branchPairs.length * 26;
+  const height = 116 + branchPairs.length * 26;
   const selectedPair = pairs.find((pair) => pair.id === selectedPairId) ?? null;
+  const selectedCenter = selectedPair ? (nodeX(selectedPair.fromIndex) + nodeX(selectedPair.toIndex)) / 2 : 0;
+  const tooltipText = selectedPair ? `${selectedPair.from} → ${selectedPair.to} · ${selectedPair.description} · ${selectedPair.semitones} semitonos` : "";
+  const tooltipWidth = selectedPair ? Math.min(300, Math.max(200, 28 + tooltipText.length * 5.1)) : 0;
+  const tooltipX = selectedPair ? Math.min(Math.max(selectedCenter - tooltipWidth / 2, 8), width - tooltipWidth - 8) : 0;
 
   return (
     <section className="rounded-[28px] border border-cyan-200/15 bg-[linear-gradient(120deg,rgba(9,25,47,0.96),rgba(15,44,78,0.88))] p-4 text-white shadow-xl sm:p-5">
@@ -58,8 +62,7 @@ export function IntervalBranchMap({ notes }: { notes: string[] }) {
             const endX = nodeX(pair.toIndex);
             const path = `M ${startX + 17} ${nodeY} H ${endX - 17}`;
             return (
-              <g key={pair.id} tabIndex={0} role="button" aria-label={`${pair.from} a ${pair.to}: ${pair.description}, ${pair.semitones} semitonos`} onMouseEnter={() => setSelectedPairId(pair.id)} onMouseLeave={() => setSelectedPairId(null)} onFocus={() => setSelectedPairId(pair.id)} onBlur={() => setSelectedPairId(null)}>
-                <title>{`${pair.from} → ${pair.to}: ${pair.description}, ${pair.semitones} semitonos`}</title>
+              <g key={pair.id} tabIndex={0} role="button" aria-label={`${pair.from} a ${pair.to}: ${pair.description}, ${pair.semitones} semitonos`} onPointerEnter={() => setSelectedPairId(pair.id)} onPointerLeave={() => setSelectedPairId(null)} onFocus={() => setSelectedPairId(pair.id)} onBlur={() => setSelectedPairId(null)}>
                 <path d={path} fill="none" stroke="rgba(165,243,252,0.9)" strokeWidth="3" strokeLinecap="round" />
                 <rect x={(startX + endX) / 2 - 18} y="19" width="36" height="20" rx="7" fill={selectedPairId === pair.id ? "#1f5475" : "#102b4d"} stroke="rgba(165,243,252,0.35)" />
                 <text x={(startX + endX) / 2} y="33" fill="#e6fbff" fontSize="12" fontWeight="700" textAnchor="middle">{pair.label}</text>
@@ -72,8 +75,7 @@ export function IntervalBranchMap({ notes }: { notes: string[] }) {
             const branchY = 72 + lane * 26;
             const path = `M ${startX + 11} ${nodeY + 9} L ${startX + 28} ${branchY} H ${endX - 28} L ${endX - 11} ${nodeY + 9}`;
             return (
-              <g key={pair.id} tabIndex={0} role="button" aria-label={`${pair.from} a ${pair.to}: ${pair.description}, ${pair.semitones} semitonos`} onMouseEnter={() => setSelectedPairId(pair.id)} onMouseLeave={() => setSelectedPairId(null)} onFocus={() => setSelectedPairId(pair.id)} onBlur={() => setSelectedPairId(null)}>
-                <title>{`${pair.from} → ${pair.to}: ${pair.description}, ${pair.semitones} semitonos`}</title>
+              <g key={pair.id} tabIndex={0} role="button" aria-label={`${pair.from} a ${pair.to}: ${pair.description}, ${pair.semitones} semitonos`} onPointerEnter={() => setSelectedPairId(pair.id)} onPointerLeave={() => setSelectedPairId(null)} onFocus={() => setSelectedPairId(pair.id)} onBlur={() => setSelectedPairId(null)}>
                 <path d={path} fill="none" stroke="rgba(165,243,252,0.66)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                 <rect x={(startX + endX) / 2 - 18} y={branchY - 11} width="36" height="20" rx="7" fill={selectedPairId === pair.id ? "#1f5475" : "#102b4d"} stroke="rgba(165,243,252,0.25)" />
                 <text x={(startX + endX) / 2} y={branchY + 3} fill="#d6f7ff" fontSize="12" fontWeight="700" textAnchor="middle">{pair.label}</text>
@@ -82,22 +84,28 @@ export function IntervalBranchMap({ notes }: { notes: string[] }) {
           })}
           {notes.map((note, index) => (
             <g key={note}>
-              <line x1={nodeX(index) + 11} y1={nodeY} x2={nodeX(index) + 11} y2={nodeY - 27} stroke="#f7ead4" strokeWidth="2" strokeLinecap="round" />
-              <ellipse cx={nodeX(index)} cy={nodeY} rx="15" ry="10" transform={`rotate(-18 ${nodeX(index)} ${nodeY})`} fill="#f7ead4" stroke="#9fe9fa" strokeWidth="1.5" />
-              <text x={nodeX(index)} y={nodeY + 28} fill="#e6fbff" fontSize="13" fontWeight="700" textAnchor="middle">{note}</text>
+              <line x1={nodeX(index) + 11} y1={nodeY} x2={nodeX(index) + 11} y2={nodeY - 27} stroke="#f8fafc" strokeWidth="2" strokeLinecap="round" />
+              <ellipse cx={nodeX(index)} cy={nodeY} rx="21" ry="14" transform={`rotate(-18 ${nodeX(index)} ${nodeY})`} fill="#020617" stroke="rgba(165,243,252,0.8)" strokeWidth="1.5" />
+              <text x={nodeX(index)} y={nodeY + 5} fill="#f8fafc" fontSize="12" fontWeight="700" textAnchor="middle">{note}</text>
             </g>
           ))}
+          {selectedPair && (
+            <g key={selectedPair.id} pointerEvents="none">
+              <path d={`M ${selectedCenter - 6} ${height - 42} L ${selectedCenter + 6} ${height - 42} L ${selectedCenter} ${height - 48} Z`} fill="#123856" />
+              <rect x={tooltipX} y={height - 42} width={tooltipWidth} height="28" rx="12" fill="url(#interval-tooltip)" stroke="rgba(165,243,252,0.55)" />
+              <circle cx={tooltipX + 14} cy={height - 28} r="3" fill="#67e8f9">
+                <animate attributeName="r" values="2.5;3.5;2.5" dur="1.2s" repeatCount="indefinite" />
+              </circle>
+              <text x={tooltipX + 24} y={height - 24} fill="#e6fbff" fontSize="11" fontWeight="600">{tooltipText}</text>
+              <defs>
+                <linearGradient id="interval-tooltip" x1="0" x2="1">
+                  <stop offset="0%" stopColor="#102b4d" />
+                  <stop offset="100%" stopColor="#18476b" />
+                </linearGradient>
+              </defs>
+            </g>
+          )}
         </svg>
-      </div>
-
-      <div className="mt-3 min-h-8 text-xs text-white/70" aria-live="polite">
-        {selectedPair ? (
-          <span className="inline-flex rounded-full border border-cyan-200/25 bg-cyan-300/10 px-3 py-1.5">
-            <strong className="text-cyan-100">{selectedPair.from} → {selectedPair.to}: {selectedPair.label}</strong>&nbsp;· {selectedPair.description} · {selectedPair.semitones} semitonos
-          </span>
-        ) : (
-          <span className="text-white/45">Pasa el cursor o enfoca una etiqueta de intervalo para ver su explicación.</span>
-        )}
       </div>
     </section>
   );
