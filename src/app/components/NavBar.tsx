@@ -61,7 +61,6 @@ export default function Navbar() {
   }, []);
 
   const userLabel = (user?.username ? `@${user.username}` : user?.displayName) ?? (user?.email ? user.email.split("@")[0] : "Perfil");
-  const hasMobileMenu = (sections?.length ?? 0) > 0;
   const { mobileOpen, mobileOpenSection, openDesktopSection } = navUi;
 
   return (
@@ -70,10 +69,11 @@ export default function Navbar() {
         <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
           {/* Brand + burger */}
           <div className="flex items-center gap-3">
-            {hasMobileMenu && (
-              <button
-                className="md:hidden inline-flex items-center justify-center rounded-lg p-2 hover:bg-white/10"
-                aria-label="Abrir menú"
+            <button
+                className="md:hidden inline-flex items-center justify-center rounded-lg p-2 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-300/60"
+                aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+                aria-expanded={mobileOpen}
+                aria-controls="mobile-navigation"
                 onClick={() =>
                   setNavUi((prev) => ({
                     ...prev,
@@ -86,7 +86,6 @@ export default function Navbar() {
                   <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" />
                 </svg>
               </button>
-            )}
             <Link href="/" className="font-semibold tracking-tight">
               🎹 MusicAula
             </Link>
@@ -183,9 +182,17 @@ export default function Navbar() {
         </div>
 
         {/* Mobile menu (acordeón) */}
-        {hasMobileMenu && mobileOpen && (
-          <div className="md:hidden border-t border-white/10 bg-[#0b1325]">
+        {mobileOpen && (
+          <div id="mobile-navigation" className="md:hidden border-t border-white/10 bg-[#0b1325]">
             <div className="mx-auto max-w-6xl px-4 py-3">
+              <Link
+                href="/"
+                onClick={() => setNavUi((prev) => ({ ...prev, mobileOpen: false, mobileOpenSection: null }))}
+                className={cn("mb-2 block rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-white", pathname === "/" && "bg-white/10 text-white")}
+              >
+                Inicio
+              </Link>
+              {!sections?.length && <p className="px-3 py-2 text-sm text-white/50">Cargando rutas de aprendizaje…</p>}
               {(sections ?? []).map((s: any) => {
                 const topics = topicsMap?.[s.code] ?? [];
                 const open = mobileOpenSection === s.code;

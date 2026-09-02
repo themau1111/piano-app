@@ -1,40 +1,28 @@
-<<<<<<< HEAD
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MusicAula
 
-## Getting Started
+Frontend de aprendizaje de piano y teoría musical construido con Next.js, React y TypeScript. La API de catálogo, ejercicios y progreso se configura mediante `NEXT_PUBLIC_API_URL`; la autenticación usa Supabase.
 
-First, run the development server:
+## Desarrollo
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre `http://localhost:3000`. Para una comprobación de tipos:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npx tsc --noEmit
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Redirecciones de autenticación
 
-## Learn More
+Define `NEXT_PUBLIC_APP_URL` por entorno. En producción debe ser la URL pública exacta, por ejemplo `https://musicaula.example.com`; para desarrollo local, `http://localhost:3000`. El frontend usa esa URL para los callbacks de Google y enlaces de correo.
 
-To learn more about Next.js, take a look at the following resources:
+En Supabase, en **Authentication → URL Configuration**, configura la misma URL pública como **Site URL** y agrega `${NEXT_PUBLIC_APP_URL}/login` a **Redirect URLs**. Puedes conservar `http://localhost:3000/login` como URL adicional para desarrollo local.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Uso sin cuenta
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Las rutas y ejercicios pueden utilizarse como invitado. Cada intento de ejercicio se guarda en `localStorage` en el navegador y se muestra en el resumen de práctica de inicio. Al iniciar sesión, los nuevos ejercicios usan el perfil autenticado y la API para persistir su progreso.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-=======
-# piano-app
->>>>>>> 33bf13a5061b270728513b02482d0861addadc5a
+La API actual no expone un contrato de migración del historial local al perfil. No se elimina ni se transmite ese historial local automáticamente.

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthGate from "./components/AuthGate";
 import Providers from "./Providers";
@@ -7,19 +6,9 @@ import Navbar from "./components/NavBar";
 import { ChatFab } from "./chat/ChatFab";
 import { TypingProvider } from "@/context/TypingContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Piano",
-  description: "Sintetizer",
+  title: "MusicAula",
+  description: "Aprende piano y teoría musical a tu ritmo.",
 };
 
 export default function RootLayout({
@@ -28,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className="dark" lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
+    <html className="dark" lang="es-MX">
+      <body className="antialiased bg-background text-foreground">
         <Providers>
           <TypingProvider>
             <Navbar />

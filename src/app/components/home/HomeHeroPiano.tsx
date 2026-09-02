@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import * as Tone from "tone";
 import { SimplePiano } from "../SimplePiano";
+import { analyzeChord } from "@/lib/analyzeChord";
+import { formatChordName } from "@/lib/formatChordName";
 
 const DEFAULT_RANGE: [number, number] = [60, 83];
 
@@ -12,26 +14,18 @@ function midiToLabel(midi: number) {
 
 export function HomeHeroPiano() {
   const [active, setActive] = useState<Set<number>>(new Set());
-  const [selected, setSelected] = useState<Set<number>>(new Set());
 
-  const selectedLabels = useMemo(
+  const activeLabels = useMemo(
     () =>
-      Array.from(selected)
+      Array.from(active)
         .sort((left, right) => left - right)
         .map(midiToLabel),
-    [selected]
+    [active]
   );
+  const chord = useMemo(() => analyzeChord(activeLabels), [activeLabels]);
 
   function handleDown(midi: number) {
     setActive((prev) => new Set(prev).add(midi));
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.add(midi);
-      while (next.size > 6) {
-        next.delete(Array.from(next)[0]);
-      }
-      return next;
-    });
   }
 
   function handleUp(midi: number) {
@@ -50,32 +44,36 @@ export function HomeHeroPiano() {
           <h2 className="mt-2 text-xl font-semibold text-white">Toca algo antes de entrar a practicar</h2>
           <p className="mt-2 text-sm leading-6 text-white/65">Puedes usar mouse o teclado de computadora. El home vuelve a sentirse vivo, pero ahora conectado al estudio guiado.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setSelected(new Set())}
-          className="rounded-xl border border-white/15 px-3 py-2 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
-        >
-          Limpiar
-        </button>
       </div>
 
       <div className="rounded-[24px] border border-white/10 bg-[#07101f] p-3">
         <div className="h-44 sm:h-52">
-          <SimplePiano active={active} selected={selected} onKeyDown={handleDown} onKeyUp={handleUp} range={DEFAULT_RANGE} />
+          <SimplePiano active={active} onKeyDown={handleDown} onKeyUp={handleUp} range={DEFAULT_RANGE} />
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-white/75">
-        <span className="text-white/45">Notas recientes:</span>
-        {selectedLabels.length ? (
-          selectedLabels.map((label) => (
+      <div className="mt-4 min-h-14" aria-live="polite">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-cyan-200/65">Sonando ahora</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-white/75">
+          {activeLabels.length ? (
+            activeLabels.map((label) => (
             <span key={label} className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100">
               {label}
             </span>
-          ))
-        ) : (
-          <span className="text-white/55">Todavía no tocas nada.</span>
+            ))
+          ) : (
+            <span className="text-white/55">Toca una tecla para escucharla y verla aquí.</span>
+          )}
+        </div>
+        {chord.status === "recognized" && chord.name && (
+          <p className="mt-3 text-sm text-cyan-50">
+            <span className="font-semibold">{formatChordName(chord.name)}</span>
+            {chord.inversion && <span className="text-white/60"> · {chord.inversion === "root" ? "posición fundamental" : `${chord.inversion} inversión`}{chord.figuredBass ? ` (${chord.figuredBass})` : ""}</span>}
+            {chord.extensions.length > 0 && <span className="text-white/60"> · incluye {chord.extensions.join(", ")}</span>}
+          </p>
         )}
+        {chord.status === "partial" && <p className="mt-3 text-sm text-white/55">Dos notas: aún no hay suficiente información para nombrar un acorde.</p>}
+        {chord.status === "ambiguous" && <p className="mt-3 text-sm text-white/55">Esta combinación admite más de una lectura; prueba añadir o retirar una nota.</p>}
       </div>
     </div>
   );

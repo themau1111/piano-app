@@ -19,6 +19,8 @@ import { cn } from "@/lib/cn";
 import { Button } from "../ui/Button";
 import { SimplePiano } from "../SimplePiano";
 import { StaffPrompt } from "./StaffPrompt";
+import { writeLocalStats } from "@/lib/progress-local";
+import { useAuth } from "@/lib/auth-store";
 
 function midiToLabel(midi: number) {
   return Tone.Frequency(midi, "midi").toNote();
@@ -35,6 +37,7 @@ export function ExerciseRunner({
   exercise: ExerciseDetail;
   preferences: Prefs | null;
 }) {
+  const { mode } = useAuth();
   const sampler = useRef<Tone.Sampler | null>(null);
   const [run, setRun] = useState<ExerciseRunSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -145,6 +148,9 @@ export function ExerciseRunner({
     try {
       const res = await attemptExerciseRun(run.runId, answer);
       setRun(res.run);
+      if (mode === "guest") {
+        writeLocalStats(exercise.id, res.run.feedback?.correct ?? res.ok);
+      }
     } finally {
       setWorking(false);
     }
@@ -230,7 +236,7 @@ export function ExerciseRunner({
           <h2 className="text-2xl font-semibold">{run.exercise.title}</h2>
           <p className="mt-2 text-sm text-white/70">{run.prompt.text}</p>
           <p className="mt-1 text-xs text-white/50">
-            {preferences?.practice?.minutesPerDay ?? 20} min diarios · nivel {run.exercise.levelIndex}
+            {preferences?.practice?.minutesPerDay ?? 20} min diarios · nivel {run.exercise.levelIndex} · {mode === "guest" ? "progreso guardado en este dispositivo" : "progreso guardado en tu perfil"}
           </p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">

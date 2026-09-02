@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { getMyPreferences } from "../../lib/api/api";
+import { getAuthRedirectUrl } from "@/lib/app-url";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,7 +14,7 @@ export default function LoginPage() {
     setLoading("google");
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: location.origin + "/login" },
+      options: { redirectTo: getAuthRedirectUrl() },
     });
     setLoading(null);
   }
@@ -24,7 +24,7 @@ export default function LoginPage() {
     setLoading("email");
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: location.origin + "/login" },
+      options: { emailRedirectTo: getAuthRedirectUrl() },
     });
     setLoading(null);
     if (error) alert(error.message);
@@ -35,15 +35,13 @@ export default function LoginPage() {
     if (didNavigateRef.current) return;
     didNavigateRef.current = true;
     setLoading("redirect");
-    try {
-      const prefs = await getMyPreferences();
-      if (typeof window !== "undefined" && window.location.hash) {
-        window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
-      }
-      router.replace(prefs ? "/" : "/preferences");
-    } finally {
-      setLoading(null);
+    // Supabase's implicit flow returns tokens in the hash. The SDK consumes
+    // them, but removing the fragment here prevents it remaining visible if
+    // another service (such as the external preferences API) is unavailable.
+    if (typeof window !== "undefined" && window.location.hash) {
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
     }
+    router.replace("/");
   }
 
   useEffect(() => {

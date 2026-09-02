@@ -6,6 +6,8 @@ import { fetchSections, getMyProgress, getPracticeQueue } from "@/lib/api/api";
 import { useCurrentUser } from "./hooks/useCurrentUser";
 import { Card } from "./components/ui/Card";
 import { HomeHeroPiano } from "./components/home/HomeHeroPiano";
+import { useEffect, useState } from "react";
+import { getLocalProgressSummary } from "@/lib/progress-local";
 
 export default function HomePage() {
   const { data: user } = useCurrentUser();
@@ -23,18 +25,25 @@ export default function HomePage() {
     queryFn: getMyProgress,
     enabled: !!user,
   });
+  const [guestProgress, setGuestProgress] = useState({ attempted: 0, mastered: 0, accuracy: 0 });
+
+  useEffect(() => {
+    if (!user) setGuestProgress(getLocalProgressSummary());
+  }, [user]);
+
+  const progressSummary = user ? progress?.summary : guestProgress;
 
   return (
-    <main className="min-h-[calc(100vh-3.5rem)] bg-[radial-gradient(circle_at_top,#15305d_0%,#0b1325_38%,#070c18_100%)] px-4 py-8 text-white">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
-        <section className="grid gap-6 lg:grid-cols-[1fr_0.92fr]">
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur">
-            <p className="text-xs uppercase tracking-[0.25em] text-cyan-300/70">MusicAula</p>
-            <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
-              Práctica guiada de piano y teoría, con ejercicios seed-based y progreso real.
+    <main className="min-h-[calc(100vh-3.5rem)] overflow-hidden bg-[radial-gradient(circle_at_72%_20%,#1b4f7c_0%,#102544_26%,#070c18_68%)] px-4 py-6 text-white sm:py-10">
+      <div className="mx-auto flex max-w-6xl flex-col gap-10">
+        <section className="grid items-center gap-7 lg:grid-cols-[0.7fr_1.3fr]">
+          <div className="relative z-10 py-3 lg:py-8">
+            <p className="text-xs uppercase tracking-[0.32em] text-cyan-200/70">MusicAula · piano y teoría</p>
+            <h1 className="mt-4 max-w-xl text-4xl font-semibold leading-[0.98] tracking-tight text-white sm:text-6xl">
+              Entiende la música <span className="text-cyan-200">desde tus manos.</span>
             </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
-              El foco ahora está en estudiar mejor: cola de práctica, niveles claros, ejercicios reproducibles y feedback utilizable.
+            <p className="mt-5 max-w-md text-sm leading-6 text-white/70 sm:text-base">
+              Explora, escucha y practica a tu ritmo. Empieza sin cuenta; crea un perfil sólo cuando quieras guardar tu camino.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               {queue?.currentTopic ? (
@@ -46,20 +55,19 @@ export default function HomePage() {
                 </Link>
               ) : (
                 <Link href="/sections/basic" className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-medium text-slate-950">
-                  Empezar fundamentos
+                  Explorar el piano
                 </Link>
               )}
               <Link href="/preferences" className="rounded-2xl border border-white/15 px-5 py-3 text-sm font-medium text-white/80 hover:bg-white/5">
-                Ajustar preferencias
+                Ver rutas
               </Link>
             </div>
           </div>
-
           <HomeHeroPiano />
         </section>
 
-        {user && (
-          <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          {user && (
             <Card title="Cola de práctica">
               {!queue?.items?.length ? (
                 <p className="text-sm text-white/70">Todavía no hay tareas en cola. Inicia una sección para generar tu primera rutina.</p>
@@ -89,19 +97,19 @@ export default function HomePage() {
                 </div>
               )}
             </Card>
+          )}
 
-            <Card title="Progreso general">
+            <Card title={user ? "Progreso general" : "Tu práctica en este dispositivo"}>
               <div className="grid gap-4 sm:grid-cols-3">
-                <Stat label="Plantillas intentadas" value={String(progress?.summary.attempted ?? 0)} />
-                <Stat label="Dominadas" value={String(progress?.summary.mastered ?? 0)} />
-                <Stat label="Precisión" value={`${Math.round((progress?.summary.accuracy ?? 0) * 100)}%`} />
+                <Stat label="Ejercicios intentados" value={String(progressSummary?.attempted ?? 0)} />
+                <Stat label="Dominadas" value={String(progressSummary?.mastered ?? 0)} />
+                <Stat label="Precisión" value={`${Math.round((progressSummary?.accuracy ?? 0) * 100)}%`} />
               </div>
               <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                Meta sugerida hoy: {queue?.dailyGoalMinutes ?? 20} minutos.
+                {user ? `Meta sugerida hoy: ${queue?.dailyGoalMinutes ?? 20} minutos.` : "Tu avance se conserva localmente. Inicia sesión cuando quieras asociarlo a un perfil."}
               </div>
             </Card>
-          </section>
-        )}
+        </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {(sections ?? []).map((section) => (

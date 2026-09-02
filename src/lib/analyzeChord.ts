@@ -1,110 +1,48 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Note } from "tonal";
-import { getIntervalsFrom, matchChordBySemitones } from "./getIntervals";
-import { CHORD_STRUCTURES } from "./chordStructures";
+import { Chord, Interval, Note } from "tonal";
 
-export function analyzeChord(notes: string[]) {
-  if (notes.length < 3)
-    return {
-      name: null,
-      root: null,
-      inversion: null,
-      figuredBass: null,
-      intervals: [],
-    };
+export type ChordAnalysis = {
+  name: string | null;
+  root: string | null;
+  inversion: "root" | "1st" | "2nd" | "3rd" | null;
+  figuredBass: "5/3" | "6/3" | "6/4" | "7" | "6/5" | "4/3" | "4/2" | null;
+  intervals: string[];
+  extensions: string[];
+  status: "empty" | "single" | "partial" | "recognized" | "ambiguous";
+};
 
-  const sorted = [...notes].sort((a, b) => Note.midi(a)! - Note.midi(b)!);
+const EMPTY_ANALYSIS: ChordAnalysis = { name: null, root: null, inversion: null, figuredBass: null, intervals: [], extensions: [], status: "empty" };
 
-  for (const candidateRoot of sorted) {
-    for (const chord of CHORD_STRUCTURES) {
-      if (matchChordBySemitones(candidateRoot, sorted, chord.intervals)) {
-        const bass = Note.pitchClass(sorted[0]);
-        const root = Note.pitchClass(candidateRoot);
+function ordinalInversion(index: number): ChordAnalysis["inversion"] {
+  return index === 0 ? "root" : index === 1 ? "1st" : index === 2 ? "2nd" : index === 3 ? "3rd" : null;
+}
 
-        const intervalsFromBass = getIntervalsFrom(sorted[0], sorted);
+function figuredBassFor(inversion: ChordAnalysis["inversion"], noteCount: number): ChordAnalysis["figuredBass"] {
+  if (noteCount === 3) return inversion === "root" ? "5/3" : inversion === "1st" ? "6/3" : inversion === "2nd" ? "6/4" : null;
+  if (noteCount >= 4) return inversion === "root" ? "7" : inversion === "1st" ? "6/5" : inversion === "2nd" ? "4/3" : inversion === "3rd" ? "4/2" : null;
+  return null;
+}
 
-        let inversion: "root" | "1st" | "2nd" | "3rd" | null = null;
-        let figuredBass:
-          | "5/3"
-          | "6/3"
-          | "6/4"
-          | "7"
-          | "6/5"
-          | "4/3"
-          | "4/2"
-          | null = null;
+/** Recognizes a chord and keeps its lowest note for inversion information. */
+export function analyzeChord(notes: string[]): ChordAnalysis {
+  const sorted = notes.filter((note) => Note.midi(note) !== null).sort((left, right) => Note.midi(left)! - Note.midi(right)!);
+  const pitchClasses = Array.from(new Set(sorted.map((note) => Note.pitchClass(note))));
 
-        const bassNote = sorted[0];
-        const bassPC = Note.pitchClass(bassNote);
-        const rootNote = candidateRoot;
+  if (pitchClasses.length === 0) return EMPTY_ANALYSIS;
+  if (pitchClasses.length === 1) return { ...EMPTY_ANALYSIS, status: "single" };
+  if (pitchClasses.length === 2) return { ...EMPTY_ANALYSIS, status: "partial" };
 
-        if (chord.intervals.length === 4) {
-          const thirdNote = Note.pitchClass(
-            Note.transpose(rootNote, chord.intervals[1])
-          );
-          const fifthNote = Note.pitchClass(
-            Note.transpose(rootNote, chord.intervals[2])
-          );
-          const seventhNote = Note.pitchClass(
-            Note.transpose(rootNote, chord.intervals[3])
-          );
+  const detected = Chord.detect(pitchClasses);
+  // In an inversion Tonal includes a slash-name (CM/E); prefer it over an
+  // enharmonically possible but less useful alternative such as Em#5.
+  const symbol = detected.find((candidate) => candidate.includes("/")) ?? detected[0];
+  const chord = symbol ? Chord.get(symbol) : null;
+  if (!chord || chord.empty || !chord.tonic) return { ...EMPTY_ANALYSIS, status: "ambiguous" };
 
-          if (bassPC === root) {
-            inversion = "root";
-            figuredBass = "7";
-          } else if (bassPC === thirdNote) {
-            inversion = "1st";
-            figuredBass = "6/5";
-          } else if (bassPC === fifthNote) {
-            inversion = "2nd";
-            figuredBass = "4/3";
-          } else if (bassPC === seventhNote) {
-            inversion = "3rd";
-            figuredBass = "4/2";
-          }
-        } else {
-          const thirdNote = Note.pitchClass(
-            Note.transpose(rootNote, chord.intervals[1])
-          );
-          const fifthNote = Note.pitchClass(
-            Note.transpose(rootNote, chord.intervals[2])
-          );
+  const bass = Note.pitchClass(sorted[0]);
+  const chordPitchClasses = chord.notes.map((note) => Note.pitchClass(note));
+  const inversion = ordinalInversion(chordPitchClasses.findIndex((note) => note === bass));
+  const intervals = chord.intervals;
+  const extensions = intervals.filter((interval) => Interval.get(interval).num > 5);
 
-          if (bassPC === root) {
-            inversion = "root";
-            figuredBass = "5/3";
-          } else if (bassPC === thirdNote) {
-            inversion = "1st";
-            figuredBass = "6/3";
-          } else if (bassPC === fifthNote) {
-            inversion = "2nd";
-            figuredBass = "6/4";
-          }
-        }
-
-        const formattedName =
-          chord.name === "major"
-            ? root
-            : chord.name === "minor"
-            ? root + "m"
-            : root + chord.name;
-
-        return {
-          name: formattedName,
-          root,
-          inversion,
-          figuredBass,
-          intervals: intervalsFromBass,
-        };
-      }
-    }
-  }
-
-  return {
-    name: null,
-    root: null,
-    inversion: null,
-    figuredBass: null,
-    intervals: [],
-  };
+  return { name: symbol, root: Note.pitchClass(chord.tonic), inversion, figuredBass: figuredBassFor(inversion, chordPitchClasses.length), intervals, extensions, status: "recognized" };
 }
