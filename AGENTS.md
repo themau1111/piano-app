@@ -56,7 +56,8 @@ progreso / cola de práctica`
   mapa de intervalos entre ellas; mientras está visible sustituye el
   resumen/cola de esa zona (`src/app/page.tsx`). En móvil, el piano incluye un
   modo de captura para sostener notas, una acción para limpiar y una vista
-  ampliada horizontal desplazable.
+  ampliada a pantalla completa que solicita orientación horizontal, con
+  desplazamiento horizontal como fallback.
 - Contenido: secciones y temas navegables bajo `src/app/sections/`.
 - Ejecución: `ExerciseRunner` genera/inicia una corrida, conserva su `runId` en
   `localStorage`, permite responder, repetir audio, revelar y avanzar.

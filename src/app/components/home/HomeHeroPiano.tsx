@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as Tone from "tone";
 import { SimplePiano } from "../SimplePiano";
 import { analyzeChord } from "@/lib/analyzeChord";
@@ -10,6 +10,13 @@ const DEFAULT_RANGE: [number, number] = [60, 83];
 
 function midiToLabel(midi: number) {
   return Tone.Frequency(midi, "midi").toNote();
+}
+
+function orientationControl() {
+  return window.screen.orientation as unknown as {
+    lock?: (orientation: "landscape") => Promise<void>;
+    unlock?: () => void;
+  };
 }
 
 export function HomeHeroPiano({
@@ -50,8 +57,40 @@ export function HomeHeroPiano({
     onClearCombination();
   }
 
+  async function toggleExpanded() {
+    const nextExpanded = !isExpanded;
+    setIsExpanded(nextExpanded);
+
+    try {
+      if (nextExpanded) {
+        await document.documentElement.requestFullscreen?.();
+        await orientationControl().lock?.("landscape");
+      } else {
+        orientationControl().unlock?.();
+        if (document.fullscreenElement) await document.exitFullscreen?.();
+      }
+    } catch {
+      // iOS and some embedded browsers do not allow orientation locking. The
+      // full-screen layout below remains a usable horizontal-scroll fallback.
+    }
+  }
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      if (!document.fullscreenElement) {
+        orientationControl().unlock?.();
+        setIsExpanded(false);
+      }
+    }
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      orientationControl().unlock?.();
+    };
+  }, []);
+
   return (
-    <div className={`border border-cyan-200/10 bg-[linear-gradient(180deg,rgba(10,18,34,0.88),rgba(14,31,58,0.82))] p-4 shadow-2xl ${isExpanded ? "-mx-4 w-screen rounded-none" : "rounded-[28px]"}`}>
+    <div className={`border border-cyan-200/10 bg-[linear-gradient(180deg,rgba(10,18,34,0.88),rgba(14,31,58,0.82))] p-4 shadow-2xl ${isExpanded ? "fixed inset-0 z-[70] overflow-auto rounded-none" : "rounded-[28px]"}`}>
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-cyan-300/70">Demo interactiva</p>
@@ -63,7 +102,7 @@ export function HomeHeroPiano({
       <div className="mb-3 flex items-center gap-2">
         <button
           type="button"
-          onClick={() => setIsExpanded((value) => !value)}
+          onClick={() => void toggleExpanded()}
           aria-label={isExpanded ? "Restaurar tamaño del piano" : "Ampliar piano"}
           title={isExpanded ? "Restaurar" : "Ampliar"}
           className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 text-cyan-100 transition hover:bg-white/10 sm:hidden"
@@ -92,7 +131,7 @@ export function HomeHeroPiano({
       </div>
 
       <div className="overflow-x-auto rounded-[24px] border border-white/10 bg-[#07101f] p-3">
-        <div className={isExpanded ? "h-56 min-w-[42rem]" : "h-44 sm:h-52"}>
+        <div className={isExpanded ? "h-[min(56dvh,22rem)] min-w-[42rem]" : "h-44 sm:h-52"}>
           <SimplePiano active={active} onKeyDown={handleDown} onKeyUp={handleUp} range={DEFAULT_RANGE} captureMode={captureMode} />
         </div>
       </div>
