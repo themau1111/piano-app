@@ -28,16 +28,23 @@ export default function Navbar() {
   // estado: panel perfil
   const [openPanel, setOpenPanel] = useState(false);
 
-  // estado: menú móvil
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileOpenSection, setMobileOpenSection] = useState<string | null>(null);
-
-  // estado: dropdown por click (desktop)
-  const [openDesktopSection, setOpenDesktopSection] = useState<string | null>(null);
+  const [navUi, setNavUi] = useState<{
+    mobileOpen: boolean;
+    mobileOpenSection: string | null;
+    openDesktopSection: string | null;
+  }>({
+    mobileOpen: false,
+    mobileOpenSection: null,
+    openDesktopSection: null,
+  });
 
   // cerrar dropdown desktop al navegar
   useEffect(() => {
-    setOpenDesktopSection(null);
+    setNavUi({
+      mobileOpen: false,
+      mobileOpenSection: null,
+      openDesktopSection: null,
+    });
   }, [pathname]);
 
   // click-away para cerrar dropdown abierto
@@ -45,13 +52,17 @@ export default function Navbar() {
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!headerRef.current) return;
-      if (!headerRef.current.contains(e.target as Node)) setOpenDesktopSection(null);
+      if (!headerRef.current.contains(e.target as Node)) {
+        setNavUi((prev) => ({ ...prev, openDesktopSection: null }));
+      }
     }
     document.addEventListener("click", onDocClick);
     return () => document.removeEventListener("click", onDocClick);
   }, []);
 
   const userLabel = (user?.username ? `@${user.username}` : user?.displayName) ?? (user?.email ? user.email.split("@")[0] : "Perfil");
+  const hasMobileMenu = (sections?.length ?? 0) > 0;
+  const { mobileOpen, mobileOpenSection, openDesktopSection } = navUi;
 
   return (
     <>
@@ -59,11 +70,23 @@ export default function Navbar() {
         <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
           {/* Brand + burger */}
           <div className="flex items-center gap-3">
-            <button className="md:hidden inline-flex items-center justify-center rounded-lg p-2 hover:bg-white/10" aria-label="Abrir menú" onClick={() => setMobileOpen((v) => !v)}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" />
-              </svg>
-            </button>
+            {hasMobileMenu && (
+              <button
+                className="md:hidden inline-flex items-center justify-center rounded-lg p-2 hover:bg-white/10"
+                aria-label="Abrir menú"
+                onClick={() =>
+                  setNavUi((prev) => ({
+                    ...prev,
+                    mobileOpen: !prev.mobileOpen,
+                    mobileOpenSection: !prev.mobileOpen ? prev.mobileOpenSection : null,
+                  }))
+                }
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" />
+                </svg>
+              </button>
+            )}
             <Link href="/" className="font-semibold tracking-tight">
               🎹 MusicAula
             </Link>
@@ -83,7 +106,10 @@ export default function Navbar() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setOpenDesktopSection((prev) => (prev === s.code ? null : s.code));
+                      setNavUi((prev) => ({
+                        ...prev,
+                        openDesktopSection: prev.openDesktopSection === s.code ? null : s.code,
+                      }));
                     }}
                     aria-expanded={isOpen}
                     aria-controls={`section-dd-${s.code}`}
@@ -157,7 +183,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile menu (acordeón) */}
-        {mobileOpen && (
+        {hasMobileMenu && mobileOpen && (
           <div className="md:hidden border-t border-white/10 bg-[#0b1325]">
             <div className="mx-auto max-w-6xl px-4 py-3">
               {(sections ?? []).map((s: any) => {
@@ -170,15 +196,21 @@ export default function Navbar() {
                     <div className="flex items-center justify-between">
                       <Link
                         href={`/sections/${s.code}`}
-                        onClick={() => setMobileOpen(false)}
+                        onClick={() => setNavUi((prev) => ({ ...prev, mobileOpen: false, mobileOpenSection: null }))}
                         aria-current={isSectionActive ? "page" : undefined}
                         className={cn("rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-white", isSectionActive && "bg-white/10 text-white")}
                       >
                         {s.title}
                       </Link>
                       <button
+                        type="button"
                         className="rounded-lg px-2 py-2 text-white/70 hover:bg-white/10"
-                        onClick={() => setMobileOpenSection((v) => (v === s.code ? null : s.code))}
+                        onClick={() =>
+                          setNavUi((prev) => ({
+                            ...prev,
+                            mobileOpenSection: prev.mobileOpenSection === s.code ? null : s.code,
+                          }))
+                        }
                         aria-label={open ? "Cerrar temas" : "Abrir temas"}
                         aria-expanded={open}
                         aria-controls={`m-acc-${s.code}`}
@@ -194,7 +226,7 @@ export default function Navbar() {
                       <div id={`m-acc-${s.code}`} className="pl-2">
                         <Link
                           href={`/sections/${s.code}`}
-                          onClick={() => setMobileOpen(false)}
+                          onClick={() => setNavUi((prev) => ({ ...prev, mobileOpen: false, mobileOpenSection: null }))}
                           className="block rounded-lg px-3 py-2 text-xs uppercase tracking-wide text-white/60 hover:bg-white/5"
                         >
                           Ver sección
@@ -205,7 +237,7 @@ export default function Navbar() {
                             <Link
                               key={t.id}
                               href={`/sections/${s.code}/${t.code}`}
-                              onClick={() => setMobileOpen(false)}
+                              onClick={() => setNavUi((prev) => ({ ...prev, mobileOpen: false, mobileOpenSection: null }))}
                               aria-current={isTopicActive ? "page" : undefined}
                               className={cn("block rounded-lg px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white", isTopicActive && "bg-white/10 text-white")}
                             >

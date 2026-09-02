@@ -37,6 +37,9 @@ export default function LoginPage() {
     setLoading("redirect");
     try {
       const prefs = await getMyPreferences();
+      if (typeof window !== "undefined" && window.location.hash) {
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+      }
       router.replace(prefs ? "/" : "/preferences");
     } finally {
       setLoading(null);

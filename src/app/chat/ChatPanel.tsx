@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
@@ -97,7 +96,7 @@ export function ChatPanel({ open, onClose, userId, username }: { open: boolean; 
           return copy;
         });
       }
-    } catch (e) {
+    } catch {
       setMessages((m) => {
         const copy = [...m];
         const current = copy[assistantIndex];
@@ -148,11 +147,23 @@ export function ChatPanel({ open, onClose, userId, username }: { open: boolean; 
             >
               <DialogPanel className="w-screen max-w-md bg-[#0b1325] text-white border-l border-white/10 shadow-2xl flex flex-col">
                 {/* Header */}
-                <div className="p-5 border-b border-white/10">
-                  <DialogTitle className="font-semibold">Asistente de MusicAula</DialogTitle>
-                  <p className="text-xs text-white/60 mt-1">
-                    Personalizado para {chatPrefs?.primaryInstrument ?? "piano"} · nivel {chatPrefs?.level ?? "beginner"}
-                  </p>
+                <div className="flex items-start justify-between gap-4 p-5 border-b border-white/10">
+                  <div>
+                    <DialogTitle className="font-semibold">Asistente de MusicAula</DialogTitle>
+                    <p className="text-xs text-white/60 mt-1">
+                      Personalizado para {chatPrefs?.primaryInstrument ?? "piano"} · nivel {chatPrefs?.level ?? "beginner"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
+                    aria-label="Cerrar chat"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </button>
                 </div>
 
                 {/* Messages */}
