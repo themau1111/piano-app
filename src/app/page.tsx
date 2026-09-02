@@ -99,13 +99,13 @@ export default function HomePage() {
             </Card>
           )}
 
-            <Card title={user ? "Progreso general" : "Tu práctica en este dispositivo"}>
+            <Card className={user ? undefined : "lg:col-span-2"} title={user ? "Progreso general" : "Tu práctica en este dispositivo"}>
               <div className="grid gap-4 sm:grid-cols-3">
                 <Stat label="Ejercicios intentados" value={String(progressSummary?.attempted ?? 0)} />
                 <Stat label="Dominadas" value={String(progressSummary?.mastered ?? 0)} />
                 <Stat label="Precisión" value={`${Math.round((progressSummary?.accuracy ?? 0) * 100)}%`} />
               </div>
-              <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+              <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
                 {user ? `Meta sugerida hoy: ${queue?.dailyGoalMinutes ?? 20} minutos.` : "Tu avance se conserva localmente. Inicia sesión cuando quieras asociarlo a un perfil."}
               </div>
             </Card>

@@ -32,10 +32,16 @@ export function analyzeChord(notes: string[]): ChordAnalysis {
   if (pitchClasses.length === 2) return { ...EMPTY_ANALYSIS, status: "partial" };
 
   const detected = Chord.detect(pitchClasses);
-  // In an inversion Tonal includes a slash-name (CM/E); prefer it over an
-  // enharmonically possible but less useful alternative such as Em#5.
-  const symbol = detected.find((candidate) => candidate.includes("/")) ?? detected[0];
-  const chord = symbol ? Chord.get(symbol) : null;
+  // Tonal can offer enharmonically valid but pedagogically misleading aliases:
+  // C–E–G is also spelled Em#5/C. Prefer a conventional major/minor reading
+  // when both describe the same held notes, while retaining altered chords
+  // when they are the only available analysis.
+  const candidate = detected
+    .map((symbol) => ({ symbol, chord: Chord.get(symbol) }))
+    .find(({ chord }) => chord.type !== "minor augmented" && chord.type !== "augmented")
+    ?? (detected[0] ? { symbol: detected[0], chord: Chord.get(detected[0]) } : null);
+  const symbol = candidate?.symbol;
+  const chord = candidate?.chord;
   if (!chord || chord.empty || !chord.tonic) return { ...EMPTY_ANALYSIS, status: "ambiguous" };
 
   const bass = Note.pitchClass(sorted[0]);
@@ -44,5 +50,5 @@ export function analyzeChord(notes: string[]): ChordAnalysis {
   const intervals = chord.intervals;
   const extensions = intervals.filter((interval) => Interval.get(interval).num > 5);
 
-  return { name: symbol, root: Note.pitchClass(chord.tonic), inversion, figuredBass: figuredBassFor(inversion, chordPitchClasses.length), intervals, extensions, status: "recognized" };
+  return { name: symbol ?? null, root: Note.pitchClass(chord.tonic), inversion, figuredBass: figuredBassFor(inversion, chordPitchClasses.length), intervals, extensions, status: "recognized" };
 }

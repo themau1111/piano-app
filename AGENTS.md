@@ -230,6 +230,10 @@ contenido, marca ni material protegido.
 7. Actualizar este archivo y/o `README.md` cuando cambien el estado verificado,
    los contratos, decisiones de producto o prioridades. No documentar deseos
    como capacidades ya entregadas.
+8. Al cerrar un cambio verificable: integrar primero a `development`, validar
+   la integración y después promoverlo a `main`. No subir directamente a
+   `main` cambios que no hayan pasado por `development`, salvo una instrucción
+   explícita para una corrección urgente.
 
 ## 8. Decisiones pendientes que requieren producto/pedagogía
 

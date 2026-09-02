@@ -20,7 +20,7 @@ export function HomeHeroPiano() {
       Array.from(active)
         .sort((left, right) => left - right)
         .map(midiToLabel),
-    [active]
+    [active],
   );
   const chord = useMemo(() => analyzeChord(activeLabels), [activeLabels]);
 
@@ -42,7 +42,7 @@ export function HomeHeroPiano() {
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-cyan-300/70">Demo interactiva</p>
           <h2 className="mt-2 text-xl font-semibold text-white">Toca algo antes de entrar a practicar</h2>
-          <p className="mt-2 text-sm leading-6 text-white/65">Puedes usar mouse o teclado de computadora. El home vuelve a sentirse vivo, pero ahora conectado al estudio guiado.</p>
+          <p className="mt-2 text-sm leading-6 text-white/65">Puedes usar mouse o teclado de computadora.</p>
         </div>
       </div>
 
@@ -52,14 +52,14 @@ export function HomeHeroPiano() {
         </div>
       </div>
 
-      <div className="mt-4 min-h-14" aria-live="polite">
+      <div className="mt-4 h-32 overflow-y-auto pr-1" aria-live="polite">
         <p className="text-xs font-medium uppercase tracking-[0.16em] text-cyan-200/65">Sonando ahora</p>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-white/75">
           {activeLabels.length ? (
             activeLabels.map((label) => (
-            <span key={label} className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100">
-              {label}
-            </span>
+              <span key={label} className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100">
+                {label}
+              </span>
             ))
           ) : (
             <span className="text-white/55">Toca una tecla para escucharla y verla aquí.</span>
@@ -68,7 +68,7 @@ export function HomeHeroPiano() {
         {chord.status === "recognized" && chord.name && (
           <p className="mt-3 text-sm text-cyan-50">
             <span className="font-semibold">{formatChordName(chord.name)}</span>
-            {chord.inversion && <span className="text-white/60"> · {chord.inversion === "root" ? "posición fundamental" : `${chord.inversion} inversión`}{chord.figuredBass ? ` (${chord.figuredBass})` : ""}</span>}
+            {chord.inversion && <span className="text-white/60"> · {chord.inversion === "root" ? "posición fundamental" : `${chord.inversion} inversión`}</span>}
             {chord.extensions.length > 0 && <span className="text-white/60"> · incluye {chord.extensions.join(", ")}</span>}
           </p>
         )}
