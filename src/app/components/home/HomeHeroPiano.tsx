@@ -60,13 +60,13 @@ export function HomeHeroPiano({
         </div>
       </div>
 
-      <div className="mb-3 flex items-center gap-2 sm:hidden">
+      <div className="mb-3 flex items-center gap-2">
         <button
           type="button"
           onClick={() => setIsExpanded((value) => !value)}
           aria-label={isExpanded ? "Restaurar tamaño del piano" : "Ampliar piano"}
           title={isExpanded ? "Restaurar" : "Ampliar"}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 text-cyan-100 transition hover:bg-white/10"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 text-cyan-100 transition hover:bg-white/10 sm:hidden"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d={isExpanded ? "M8 3H3v5m13-5h5v5M8 21H3v-5m18 5h-5v-5" : "M8 3H3v5m0-5 6 6m7-6h5v5m0-5-6 6M8 21H3v-5m0 5 6-6m7 6h5v-5m0 5-6-6"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

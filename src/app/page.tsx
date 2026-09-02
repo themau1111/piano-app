@@ -7,7 +7,7 @@ import { useCurrentUser } from "./hooks/useCurrentUser";
 import { Card } from "./components/ui/Card";
 import { HomeHeroPiano } from "./components/home/HomeHeroPiano";
 import { IntervalBranchMap } from "./components/home/IntervalBranchMap";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getLocalProgressSummary } from "@/lib/progress-local";
 import * as Tone from "tone";
 
@@ -30,13 +30,16 @@ export default function HomePage() {
   const [guestProgress, setGuestProgress] = useState({ attempted: 0, mastered: 0, accuracy: 0 });
   const [activeHeroNotes, setActiveHeroNotes] = useState<Set<number>>(new Set());
   const [lastPlayedNotes, setLastPlayedNotes] = useState<string[]>([]);
+  const previousHeroNoteCount = useRef(0);
 
   useEffect(() => {
     if (!user) setGuestProgress(getLocalProgressSummary());
   }, [user]);
 
   useEffect(() => {
-    if (activeHeroNotes.size < 2) return;
+    const isAddingNotes = activeHeroNotes.size > previousHeroNoteCount.current;
+    previousHeroNoteCount.current = activeHeroNotes.size;
+    if (activeHeroNotes.size < 2 || !isAddingNotes) return;
     setLastPlayedNotes(
       Array.from(activeHeroNotes)
         .sort((left, right) => left - right)
