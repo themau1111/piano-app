@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import * as Tone from "tone";
 import { SimplePiano } from "../SimplePiano";
 import { analyzeChord } from "@/lib/analyzeChord";
@@ -23,10 +23,12 @@ export function HomeHeroPiano({
   active,
   setActive,
   onClearCombination,
+  intervalMap,
 }: {
   active: Set<number>;
   setActive: React.Dispatch<React.SetStateAction<Set<number>>>;
   onClearCombination: () => void;
+  intervalMap?: ReactNode;
 }) {
   const [captureMode, setCaptureMode] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -89,8 +91,20 @@ export function HomeHeroPiano({
     };
   }, []);
 
+  useEffect(() => {
+    if (!isExpanded) return;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [isExpanded]);
+
   return (
-    <div className={`border border-cyan-200/10 bg-[linear-gradient(180deg,rgba(10,18,34,0.88),rgba(14,31,58,0.82))] p-4 shadow-2xl ${isExpanded ? "fixed inset-0 z-[70] overflow-auto rounded-none" : "rounded-[28px]"}`}>
+    <div className={`border border-cyan-200/10 bg-[linear-gradient(180deg,rgba(10,18,34,0.88),rgba(14,31,58,0.82))] p-4 shadow-2xl ${isExpanded ? "fixed inset-0 z-[70] overscroll-contain overflow-auto rounded-none !bg-[#06101f]" : "rounded-[28px]"}`}>
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-cyan-300/70">Demo interactiva</p>
@@ -99,13 +113,13 @@ export function HomeHeroPiano({
         </div>
       </div>
 
-      <div className="mb-3 flex items-center gap-2">
+      <div className={`mb-3 flex items-center gap-2 ${isExpanded ? "sticky top-0 z-10 -mx-4 bg-[#06101f] px-4 py-2" : ""}`}>
         <button
           type="button"
           onClick={() => void toggleExpanded()}
           aria-label={isExpanded ? "Restaurar tamaño del piano" : "Ampliar piano"}
           title={isExpanded ? "Restaurar" : "Ampliar"}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 text-cyan-100 transition hover:bg-white/10 sm:hidden"
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 text-cyan-100 transition hover:bg-white/10 ${isExpanded ? "" : "sm:hidden"}`}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d={isExpanded ? "M8 3H3v5m13-5h5v5M8 21H3v-5m18 5h-5v-5" : "M8 3H3v5m0-5 6 6m7-6h5v5m0-5-6 6M8 21H3v-5m0 5 6-6m7 6h5v-5m0 5-6-6"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -136,7 +150,7 @@ export function HomeHeroPiano({
         </div>
       </div>
 
-      <div className="mt-4 h-32 overflow-y-auto pr-1" aria-live="polite">
+      <div className="mt-4 h-24 overflow-y-auto pr-1" aria-live="polite">
         <p className="text-xs font-medium uppercase tracking-[0.16em] text-cyan-200/65">Sonando ahora</p>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-white/75">
           {activeLabels.length ? (
@@ -159,6 +173,8 @@ export function HomeHeroPiano({
         {chord.status === "partial" && <p className="mt-3 text-sm text-white/55">Dos notas: aún no hay suficiente información para nombrar un acorde.</p>}
         {chord.status === "ambiguous" && <p className="mt-3 text-sm text-white/55">Esta combinación admite más de una lectura; prueba añadir o retirar una nota.</p>}
       </div>
+
+      {isExpanded && intervalMap && <div className="mt-5 pb-6">{intervalMap}</div>}
     </div>
   );
 }

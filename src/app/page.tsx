@@ -79,7 +79,12 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-          <HomeHeroPiano active={activeHeroNotes} setActive={setActiveHeroNotes} onClearCombination={() => setLastPlayedNotes([])} />
+          <HomeHeroPiano
+            active={activeHeroNotes}
+            setActive={setActiveHeroNotes}
+            onClearCombination={() => setLastPlayedNotes([])}
+            intervalMap={lastPlayedNotes.length >= 2 ? <IntervalBranchMap notes={lastPlayedNotes} /> : undefined}
+          />
         </section>
 
         {lastPlayedNotes.length >= 2 ? (
