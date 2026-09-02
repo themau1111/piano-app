@@ -22,6 +22,13 @@ function figuredBassFor(inversion: ChordAnalysis["inversion"], noteCount: number
   return null;
 }
 
+function describeExtension(interval: string) {
+  const { num, q } = Interval.get(interval);
+  const ordinal: Record<number, string> = { 7: "séptima", 9: "novena", 11: "undécima", 13: "decimotercera" };
+  const quality: Record<string, string> = { M: "mayor", m: "menor", P: "justa", A: "aumentada", d: "disminuida" };
+  return `${ordinal[num] ?? `${num}ª`} ${quality[q] ?? ""}`.trim();
+}
+
 /** Recognizes a chord and keeps its lowest note for inversion information. */
 export function analyzeChord(notes: string[]): ChordAnalysis {
   const sorted = notes.filter((note) => Note.midi(note) !== null).sort((left, right) => Note.midi(left)! - Note.midi(right)!);
@@ -45,10 +52,20 @@ export function analyzeChord(notes: string[]): ChordAnalysis {
   if (!chord || chord.empty || !chord.tonic) return { ...EMPTY_ANALYSIS, status: "ambiguous" };
 
   const bass = Note.pitchClass(sorted[0]);
-  const chordPitchClasses = chord.notes.map((note) => Note.pitchClass(note));
-  const inversion = ordinalInversion(chordPitchClasses.findIndex((note) => note === bass));
-  const intervals = chord.intervals;
-  const extensions = intervals.filter((interval) => Interval.get(interval).num > 5);
+  // A slash chord reorders `chord.notes` and its intervals around the bass.
+  // Work from the unslashed chord so inversion and extensions stay rooted in
+  // the tonic: Cmaj7/E is a first inversion with a major seventh, never an
+  // octave extension.
+  const rootChord = Chord.get((symbol ?? "").split("/")[0]);
+  const intervals = rootChord.intervals;
+  const bassDistance = (Note.chroma(bass) - Note.chroma(chord.tonic) + 12) % 12;
+  const inversion = ordinalInversion(intervals.findIndex((interval) => (Interval.semitones(interval) ?? -1) % 12 === bassDistance));
+  const extensions = intervals
+    .filter((interval) => {
+      const num = Interval.get(interval).num;
+      return num === 7 || num === 9 || num === 11 || num === 13;
+    })
+    .map(describeExtension);
 
-  return { name: symbol ?? null, root: Note.pitchClass(chord.tonic), inversion, figuredBass: figuredBassFor(inversion, chordPitchClasses.length), intervals, extensions, status: "recognized" };
+  return { name: symbol ?? null, root: Note.pitchClass(chord.tonic), inversion, figuredBass: figuredBassFor(inversion, intervals.length), intervals, extensions, status: "recognized" };
 }

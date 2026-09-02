@@ -10,11 +10,14 @@ type Props = {
   onKeyDown: (midi: number) => void;
   onKeyUp: (midi: number) => void;
   range?: [number, number];
+  /** Keeps a pressed note sounding until it is tapped again or cleared externally. */
+  captureMode?: boolean;
 };
 
-export function SimplePiano({ active, selected = new Set(), onKeyDown, onKeyUp, range = [60, 72] }: Props) {
+export function SimplePiano({ active, selected = new Set(), onKeyDown, onKeyUp, range = [60, 72], captureMode = false }: Props) {
   const sampler = useRef<Tone.Sampler | null>(null);
   const pressedKeys = useRef<Set<string>>(new Set());
+  const capturedNotes = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     if (!sampler.current) {
@@ -53,14 +56,35 @@ export function SimplePiano({ active, selected = new Set(), onKeyDown, onKeyUp, 
 
   const handleDown = useCallback(async (m: number) => {
     await Tone.start(); // asegura el AudioContext al primer click
+    if (captureMode) {
+      if (active.has(m)) {
+        onKeyUp(m);
+        capturedNotes.current.delete(m);
+        sampler.current?.triggerRelease(midiToNote(m));
+      } else {
+        onKeyDown(m);
+        capturedNotes.current.add(m);
+        sampler.current?.triggerAttack(midiToNote(m));
+      }
+      return;
+    }
     onKeyDown(m);
     sampler.current?.triggerAttack(midiToNote(m));
-  }, [onKeyDown]);
+  }, [active, captureMode, onKeyDown, onKeyUp]);
 
   const handleUp = useCallback((m: number) => {
+    if (captureMode) return;
     onKeyUp(m);
     sampler.current?.triggerRelease(midiToNote(m));
-  }, [onKeyUp]);
+  }, [captureMode, onKeyUp]);
+
+  useEffect(() => {
+    capturedNotes.current.forEach((midi) => {
+      if (active.has(midi)) return;
+      capturedNotes.current.delete(midi);
+      sampler.current?.triggerRelease(midiToNote(midi));
+    });
+  }, [active]);
 
   useEffect(() => {
     const isTypingInInput = () => {

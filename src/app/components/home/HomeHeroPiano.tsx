@@ -12,8 +12,17 @@ function midiToLabel(midi: number) {
   return Tone.Frequency(midi, "midi").toNote();
 }
 
-export function HomeHeroPiano() {
-  const [active, setActive] = useState<Set<number>>(new Set());
+export function HomeHeroPiano({
+  active,
+  setActive,
+  onClearCombination,
+}: {
+  active: Set<number>;
+  setActive: React.Dispatch<React.SetStateAction<Set<number>>>;
+  onClearCombination: () => void;
+}) {
+  const [captureMode, setCaptureMode] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const activeLabels = useMemo(
     () =>
@@ -36,8 +45,13 @@ export function HomeHeroPiano() {
     });
   }
 
+  function clearCapture() {
+    setActive(new Set());
+    onClearCombination();
+  }
+
   return (
-    <div className="rounded-[28px] border border-cyan-200/10 bg-[linear-gradient(180deg,rgba(10,18,34,0.88),rgba(14,31,58,0.82))] p-4 shadow-2xl">
+    <div className={`border border-cyan-200/10 bg-[linear-gradient(180deg,rgba(10,18,34,0.88),rgba(14,31,58,0.82))] p-4 shadow-2xl ${isExpanded ? "-mx-4 w-screen rounded-none" : "rounded-[28px]"}`}>
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-cyan-300/70">Demo interactiva</p>
@@ -46,9 +60,40 @@ export function HomeHeroPiano() {
         </div>
       </div>
 
-      <div className="rounded-[24px] border border-white/10 bg-[#07101f] p-3">
-        <div className="h-44 sm:h-52">
-          <SimplePiano active={active} onKeyDown={handleDown} onKeyUp={handleUp} range={DEFAULT_RANGE} />
+      <div className="mb-3 flex items-center gap-2 sm:hidden">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((value) => !value)}
+          aria-label={isExpanded ? "Restaurar tamaño del piano" : "Ampliar piano"}
+          title={isExpanded ? "Restaurar" : "Ampliar"}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 text-cyan-100 transition hover:bg-white/10"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d={isExpanded ? "M8 3H3v5m13-5h5v5M8 21H3v-5m18 5h-5v-5" : "M8 3H3v5m0-5 6 6m7-6h5v5m0-5-6 6M8 21H3v-5m0 5 6-6m7 6h5v-5m0 5-6-6"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={captureMode}
+          onClick={() => setCaptureMode((value) => !value)}
+          className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${captureMode ? "border-cyan-200/50 bg-cyan-300/15 text-cyan-50" : "border-white/15 text-white/70 hover:bg-white/10"}`}
+        >
+          Modo captura
+        </button>
+        <button
+          type="button"
+          onClick={clearCapture}
+          disabled={!active.size}
+          className="rounded-xl border border-white/15 px-3 py-2 text-xs font-medium text-white/70 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Limpiar
+        </button>
+      </div>
+
+      <div className="overflow-x-auto rounded-[24px] border border-white/10 bg-[#07101f] p-3">
+        <div className={isExpanded ? "h-56 min-w-[42rem]" : "h-44 sm:h-52"}>
+          <SimplePiano active={active} onKeyDown={handleDown} onKeyUp={handleUp} range={DEFAULT_RANGE} captureMode={captureMode} />
         </div>
       </div>
 

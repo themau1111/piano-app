@@ -51,8 +51,12 @@ registrada en Supabase Auth como `Site URL` y en la lista de `Redirect URLs`.
 progreso / cola de práctica`
 
 - Inicio: secciones, resumen de progreso y cola de práctica para usuarios
-  autenticados; los invitados ven un resumen local de sus intentos
-  (`src/app/page.tsx`).
+  autenticados; los invitados ven un resumen local de sus intentos. El piano
+  de la portada conserva la última combinación de dos o más notas y muestra un
+  mapa de intervalos entre ellas; mientras está visible sustituye el
+  resumen/cola de esa zona (`src/app/page.tsx`). En móvil, el piano incluye un
+  modo de captura para sostener notas, una acción para limpiar y una vista
+  ampliada horizontal desplazable.
 - Contenido: secciones y temas navegables bajo `src/app/sections/`.
 - Ejecución: `ExerciseRunner` genera/inicia una corrida, conserva su `runId` en
   `localStorage`, permite responder, repetir audio, revelar y avanzar.

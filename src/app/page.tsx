@@ -6,8 +6,10 @@ import { fetchSections, getMyProgress, getPracticeQueue } from "@/lib/api/api";
 import { useCurrentUser } from "./hooks/useCurrentUser";
 import { Card } from "./components/ui/Card";
 import { HomeHeroPiano } from "./components/home/HomeHeroPiano";
+import { IntervalBranchMap } from "./components/home/IntervalBranchMap";
 import { useEffect, useState } from "react";
 import { getLocalProgressSummary } from "@/lib/progress-local";
+import * as Tone from "tone";
 
 export default function HomePage() {
   const { data: user } = useCurrentUser();
@@ -26,10 +28,21 @@ export default function HomePage() {
     enabled: !!user,
   });
   const [guestProgress, setGuestProgress] = useState({ attempted: 0, mastered: 0, accuracy: 0 });
+  const [activeHeroNotes, setActiveHeroNotes] = useState<Set<number>>(new Set());
+  const [lastPlayedNotes, setLastPlayedNotes] = useState<string[]>([]);
 
   useEffect(() => {
     if (!user) setGuestProgress(getLocalProgressSummary());
   }, [user]);
+
+  useEffect(() => {
+    if (activeHeroNotes.size < 2) return;
+    setLastPlayedNotes(
+      Array.from(activeHeroNotes)
+        .sort((left, right) => left - right)
+        .map((midi) => Tone.Frequency(midi, "midi").toNote()),
+    );
+  }, [activeHeroNotes]);
 
   const progressSummary = user ? progress?.summary : guestProgress;
 
@@ -63,10 +76,13 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-          <HomeHeroPiano />
+          <HomeHeroPiano active={activeHeroNotes} setActive={setActiveHeroNotes} onClearCombination={() => setLastPlayedNotes([])} />
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        {lastPlayedNotes.length >= 2 ? (
+          <IntervalBranchMap notes={lastPlayedNotes} />
+        ) : (
+          <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           {user && (
             <Card title="Cola de práctica">
               {!queue?.items?.length ? (
@@ -109,7 +125,8 @@ export default function HomePage() {
                 {user ? `Meta sugerida hoy: ${queue?.dailyGoalMinutes ?? 20} minutos.` : "Tu avance se conserva localmente. Inicia sesión cuando quieras asociarlo a un perfil."}
               </div>
             </Card>
-        </section>
+          </section>
+        )}
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {(sections ?? []).map((section) => (
