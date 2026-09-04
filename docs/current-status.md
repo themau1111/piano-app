@@ -31,19 +31,28 @@ Se completó el primer ejercicio nativo de solfeo centrado en oído:
 
 Validación realizada:
 
-- Frontend: `npm run build` y `npx tsc --noEmit` aprobados.
+- Frontend: `npm run build` y `npx tsc --noEmit` aprobados con Node 20.19.5
+  mediante nvm.
 - API: `pnpm test` (14 pruebas) y `pnpm run build` aprobados. Las pruebas
   nuevas cubren el contrato de listado de lecciones, la evaluación de avance
   tanto incompleta como completada y la estabilidad de las claves y posiciones
   del seed al re-ejecutarse.
 - API HTTP: `pnpm test:e2e` aprobado con lectura de lecciones, evaluación
   autenticada simulada y validación de los endpoints de autoría administrativa.
-- `react-doctor` no pudo ejecutarse: la instalación temporal de npm no resolvió
-  su binding nativo de `oxc-parser` bajo Node 18. No bloqueó las validaciones
-  anteriores; actualizar Node a 20+ sigue siendo recomendable.
+- `react-doctor` no pudo ejecutarse incluso con Node 20.19.5: la instalación
+  temporal de npm no resolvió el binding opcional de `oxc-parser`. No bloqueó
+  compilación ni tipos; requiere reparar la caché/instalación temporal de npm
+  antes de volver a intentarlo.
 
-Los cambios permanecen sin commit en ambos repositorios para revisión e
-integración en `development` antes de promoverlos a `main`.
+Promoción y despliegue:
+
+- Frontend: commit `4eb67aa` (`feat: add solfege lessons and admin authoring`)
+  integrado y subido a `development` y `main`.
+- API: commit `a15d9bc` (`feat: add lesson contracts and solfege foundation`)
+  integrado y subido a `development` y `main`.
+- Ambos directorios locales quedaron limpios en `development`. Los despliegues
+  automáticos se dispararon desde `main`, pero aún no se verificaron contra una
+  sesión administrativa real.
 
 ## Base de datos y acceso
 
@@ -95,21 +104,16 @@ Pendientes operativos de Supabase, sin cambio automático realizado:
 
 ## Siguiente orden de trabajo
 
-1. Desplegar la API y ejecutar el seed `solfege-foundations` con una cuenta
-   `admin`; el catálogo público desplegado aún devuelve 404 para esa sección.
-   Después, ejecutar una prueba integrada de la nueva actividad: iniciar corrida,
-   responder correcto e incorrecto, repetir audio, revelar, avanzar y validar
-   el seed administrativo con una cuenta `admin`.
-2. Añadir una prueba de idempotencia del seed y una prueba de flujo real
-   frontend–API. El motor de `melodic_direction` ya cubre generación,
-   respuesta correcta, incorrecta y revelado; el servicio de lecciones cubre
-   el contrato de progreso.
-3. Realizar la primera prueba integrada con un administrador: crear/editar la
-   lección, ejecutar la práctica y comprobar avance. Las pruebas HTTP de
-   contrato de autoría, lectura y evaluación ya están cubiertas localmente.
-4. Usar ese modelo para cerrar una ruta principiante de solfeo antes de ampliar
+1. Esperar a que los despliegues de ambos `main` estén saludables. Con una
+   sesión `admin`, ejecutar `Seed fundamentos de solfeo` desde `/admin` y
+   confirmar que la sección deja de devolver 404.
+2. Realizar el E2E autenticado: abrir/editar la lección, iniciar una corrida,
+   responder correcto e incorrecto, repetir audio, revelar, avanzar y usar
+   **Comprobar mi avance**. Registrar cualquier diferencia entre frontend y
+   API. Las pruebas de motor, servicio y HTTP ya están cubiertas localmente.
+3. Usar ese modelo para cerrar una ruta principiante de solfeo antes de ampliar
    el catálogo: pulso, nombres de notas, altura/dirección y escucha básica.
-5. Después, mejorar feedback por error y repetición espaciada usando `weakTags`,
+4. Después, mejorar feedback por error y repetición espaciada usando `weakTags`,
    precisión y fecha de práctica, con una explicación visible de por qué se
    propone cada repaso.
 
