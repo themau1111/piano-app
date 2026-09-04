@@ -2,6 +2,7 @@ export type ExerciseKind =
   | "keyboard_note"
   | "staff_note"
   | "ear_interval"
+  | "melodic_direction"
   | "scale_construction"
   | "chord_identification";
 
@@ -66,6 +67,18 @@ export type ExerciseTemplateConfig =
   | {
       skillCode: string;
       levelIndex: number;
+      generator: "melodic_direction";
+      constraints: {
+        direction: "ascending" | "descending" | "both";
+        semitones: number[];
+        range: { minMidi: number; maxMidi: number };
+      };
+      presentation: TemplatePresentation;
+      mastery: MasteryRule;
+    }
+  | {
+      skillCode: string;
+      levelIndex: number;
       generator: "scale_construction";
       constraints: {
         roots: string[];
@@ -122,6 +135,11 @@ export type ExercisePrompt =
       options: string[];
     }
   | {
+      kind: "melodic_direction";
+      text: string;
+      options: Array<"ascending" | "descending">;
+    }
+  | {
       kind: "scale_construction";
       text: string;
       keyboardRange: [number, number];
@@ -149,6 +167,10 @@ export type ExerciseInputSpec =
   | {
       mode: "interval-options";
       options: string[];
+    }
+  | {
+      mode: "choice-options";
+      options: Array<"ascending" | "descending">;
     }
   | {
       mode: "chord-builder";
@@ -205,6 +227,7 @@ export type ExerciseRunSnapshot = {
 export type ExerciseAttemptAnswer = {
   selectedMidis?: number[];
   interval?: string;
+  direction?: "ascending" | "descending";
   chordName?: string;
   inversion?: number | null;
 };
@@ -245,6 +268,28 @@ export type ExerciseDetail = {
   sectionCode?: string;
   config: ExerciseTemplateConfig;
 };
+
+export type LessonSummary = {
+  id: number;
+  topicId: number;
+  code: string;
+  title: string;
+  summary: string;
+  objective: string;
+  prerequisites: string[];
+  completion: Record<string, unknown>;
+  nextLessonCode: string | null;
+};
+
+export type LessonBlock = {
+  id: number;
+  position: number;
+  kind: "explanation" | "exercise" | "reflection" | "recap";
+  content: Record<string, unknown>;
+  exercise: { id: number; title: string; kind: ExerciseKind } | null;
+};
+
+export type LessonDetail = LessonSummary & { blocks: LessonBlock[] };
 
 export type ProgressStats = {
   attempts: number;
@@ -312,4 +357,24 @@ export type AdminCatalogData = {
   sections: Section[];
   topics: Topic[];
   exercises: ExerciseCatalogItem[];
+  lessons: Array<{
+    id: number;
+    topic_id: number;
+    code: string;
+    title: string;
+    summary: string | null;
+    objective: string;
+    prerequisites: string[];
+    completion: Record<string, unknown>;
+    next_lesson_code: string | null;
+    is_active: boolean;
+  }>;
+  lessonBlocks: Array<{
+    id: number;
+    lesson_id: number;
+    position: number;
+    kind: "explanation" | "exercise" | "reflection" | "recap";
+    content: Record<string, unknown>;
+    exercise_id: number | null;
+  }>;
 };

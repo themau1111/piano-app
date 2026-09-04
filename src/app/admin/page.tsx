@@ -10,13 +10,17 @@ import {
   listSectionsFull,
   previewExercise,
   seedBasic,
+  seedSolfegeFoundations,
   toggleExercise,
+  replaceLessonBlocks,
   upsertExercise,
+  upsertLesson,
   upsertSection,
   upsertTopic,
 } from "@/lib/api/admin";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import type { ExerciseKind, ExerciseTemplateConfig } from "@/lib/exercises/contracts";
+import type { LessonBlockUpsertDto, LessonUpsertDto } from "@/lib/api/admin";
 
 type PreviewSample = {
   seed: number;
@@ -32,6 +36,7 @@ const KIND_OPTIONS: Array<{ value: FormKind; label: string }> = [
   { value: "keyboard_note", label: "Keyboard Note" },
   { value: "staff_note", label: "Staff Note" },
   { value: "ear_interval", label: "Ear Interval" },
+  { value: "melodic_direction", label: "Melodic Direction" },
   { value: "scale_construction", label: "Scale Construction" },
   { value: "chord_identification", label: "Chord Identification" },
 ];
@@ -94,6 +99,24 @@ function defaultConfig(kind: FormKind): ExerciseTemplateConfig {
           attemptsAllowed: 4,
         },
         mastery: { minAttempts: 10, minAccuracy: 0.85, minStreak: 3 },
+      };
+    case "melodic_direction":
+      return {
+        skillCode: "melodic-direction-1",
+        levelIndex: 1,
+        generator: kind,
+        constraints: {
+          direction: "both",
+          semitones: [2, 3, 4],
+          range: { minMidi: 60, maxMidi: 72 },
+        },
+        presentation: {
+          instructions: "Escucha los dos sonidos y decide si el segundo sube o baja.",
+          autoReplay: true,
+          allowReplay: true,
+          attemptsAllowed: 4,
+        },
+        mastery: { minAttempts: 6, minAccuracy: 0.8, minStreak: 2 },
       };
     case "scale_construction":
       return {
@@ -222,6 +245,10 @@ function AdminCatalogView() {
     mutationFn: seedBasic,
     onSuccess: invalidate,
   });
+  const seedSolfegeMutation = useMutation({
+    mutationFn: seedSolfegeFoundations,
+    onSuccess: invalidate,
+  });
 
   function setCommon<K extends keyof ExerciseTemplateConfig>(key: K, value: ExerciseTemplateConfig[K]) {
     setExerciseConfig((prev) => ({ ...prev, [key]: value }));
@@ -252,6 +279,9 @@ function AdminCatalogView() {
           <div className="flex gap-3">
             <button onClick={() => seedMutation.mutate()} className="rounded-2xl border border-white/15 px-4 py-2 text-sm hover:bg-white/5">
               {seedMutation.isPending ? "Seeding…" : "Seed básico"}
+            </button>
+            <button onClick={() => seedSolfegeMutation.mutate()} className="rounded-2xl border border-cyan-300/30 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-300/10">
+              {seedSolfegeMutation.isPending ? "Sembrando…" : "Seed fundamentos de solfeo"}
             </button>
             <button onClick={() => invalidate()} className="rounded-2xl bg-cyan-300 px-4 py-2 text-sm font-medium text-slate-950">
               Refrescar
@@ -456,10 +486,86 @@ function AdminCatalogView() {
           />
         </Panel>
 
+        <LessonAuthoring
+          topics={topics}
+          exercises={exercises}
+          lessons={data?.lessons ?? []}
+          lessonBlocks={data?.lessonBlocks ?? []}
+          onSaved={invalidate}
+        />
+
         {isLoading && <div className="text-sm text-white/60">Cargando catálogo…</div>}
       </div>
     </main>
   );
+}
+
+function LessonAuthoring({
+  topics,
+  exercises,
+  lessons,
+  lessonBlocks,
+  onSaved,
+}: {
+  topics: Array<{ id: number; title: string }>;
+  exercises: Array<{ id: number; title: string; topic_id: number | null }>;
+  lessons: Array<{ id: number; topic_id: number; code: string; title: string; summary: string | null; objective: string; prerequisites: string[]; completion: Record<string, unknown>; next_lesson_code: string | null; is_active: boolean }>;
+  lessonBlocks: Array<{ lesson_id: number; position: number; kind: LessonBlockUpsertDto["kind"]; content: Record<string, unknown>; exercise_id: number | null }>;
+  onSaved: () => void;
+}) {
+  const [selectedId, setSelectedId] = useState(0);
+  const [form, setForm] = useState<LessonUpsertDto>({ topic_id: 0, code: "", title: "", summary: "", objective: "", prerequisites: [], completion: {} });
+  const [completionText, setCompletionText] = useState("{}");
+  const [blocksText, setBlocksText] = useState("[]");
+  const [error, setError] = useState("");
+  const save = useMutation({
+    mutationFn: async () => {
+      const completion = JSON.parse(completionText) as Record<string, unknown>;
+      if (!completion || Array.isArray(completion)) throw new Error("El criterio de cierre debe ser un objeto JSON.");
+      const blocks = JSON.parse(blocksText) as LessonBlockUpsertDto[];
+      if (!Array.isArray(blocks)) throw new Error("Los bloques deben ser un arreglo JSON.");
+      const lesson = await upsertLesson({ ...form, completion });
+      await replaceLessonBlocks(lesson.id, blocks);
+    },
+    onSuccess: () => {
+      setError("");
+      onSaved();
+    },
+    onError: (cause) => setError(cause instanceof Error ? cause.message : "No se pudo guardar la lección."),
+  });
+
+  function loadLesson(id: number) {
+    setSelectedId(id);
+    const lesson = lessons.find((item) => item.id === id);
+    if (!lesson) {
+      setForm({ topic_id: 0, code: "", title: "", summary: "", objective: "", prerequisites: [], completion: {} });
+      setCompletionText("{}");
+      setBlocksText("[]");
+      return;
+    }
+    setForm({ topic_id: lesson.topic_id, code: lesson.code, title: lesson.title, summary: lesson.summary ?? "", objective: lesson.objective, prerequisites: lesson.prerequisites, completion: lesson.completion, next_lesson_code: lesson.next_lesson_code, is_active: lesson.is_active });
+    setCompletionText(JSON.stringify(lesson.completion));
+    setBlocksText(JSON.stringify(lessonBlocks.filter((block) => block.lesson_id === id).map(({ position, kind, content, exercise_id }) => ({ position, kind, content, exercise_id })), null, 2));
+  }
+
+  return <Panel title="Lecciones y bloques">
+    <p className="mb-4 text-sm leading-6 text-white/65">Define el objetivo y la evidencia de cierre. Los bloques se guardan como una lista ordenada; usa un bloque <code>exercise</code> sólo con un ejercicio del mismo tema.</p>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <SelectField label="Editar lección" value={String(selectedId)} onChange={(value) => loadLesson(Number(value))} options={[{ value: "0", label: "Nueva lección" }, ...lessons.map((lesson) => ({ value: String(lesson.id), label: lesson.title }))]} />
+      <SelectField label="Tema" value={String(form.topic_id)} onChange={(value) => setForm((current) => ({ ...current, topic_id: Number(value) }))} options={[{ value: "0", label: "Selecciona…" }, ...topics.map((topic) => ({ value: String(topic.id), label: topic.title }))]} />
+      <Input label="Código" value={form.code} onChange={(value) => setForm((current) => ({ ...current, code: value }))} />
+      <Input label="Título" value={form.title} onChange={(value) => setForm((current) => ({ ...current, title: value }))} />
+      <Input label="Resumen" value={form.summary ?? ""} onChange={(value) => setForm((current) => ({ ...current, summary: value }))} />
+      <Input label="Siguiente código" value={form.next_lesson_code ?? ""} onChange={(value) => setForm((current) => ({ ...current, next_lesson_code: value || null }))} />
+      <Input label="Prerrequisitos (separados por coma)" value={form.prerequisites.join(", ")} onChange={(value) => setForm((current) => ({ ...current, prerequisites: splitCSV(value) }))} />
+      <Input label="Criterio de cierre (JSON)" value={completionText} onChange={setCompletionText} />
+    </div>
+    <label className="mt-3 block space-y-1 text-sm"><span className="text-white/70">Objetivo observable</span><textarea value={form.objective} onChange={(event) => setForm((current) => ({ ...current, objective: event.target.value }))} className="min-h-20 w-full rounded-2xl border border-white/10 bg-white/5 p-3 outline-none focus:ring-2 focus:ring-cyan-300/40" /></label>
+    <label className="mt-3 block space-y-1 text-sm"><span className="text-white/70">Bloques (JSON)</span><textarea value={blocksText} onChange={(event) => setBlocksText(event.target.value)} className="min-h-56 w-full rounded-2xl border border-white/10 bg-white/5 p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-cyan-300/40" /></label>
+    {!!form.topic_id && <p className="mt-2 text-xs text-white/50">Ejercicios disponibles: {exercises.filter((exercise) => exercise.topic_id === form.topic_id).map((exercise) => `${exercise.id}: ${exercise.title}`).join(" · ") || "ninguno"}</p>}
+    {error && <p className="mt-3 text-sm text-amber-100">{error}</p>}
+    <button type="button" onClick={() => save.mutate()} disabled={save.isPending || !form.topic_id || !form.code || !form.title || !form.objective} className="mt-4 rounded-2xl bg-cyan-300 px-4 py-2 text-sm font-medium text-slate-950 disabled:opacity-60">{save.isPending ? "Guardando…" : "Guardar lección y bloques"}</button>
+  </Panel>;
 }
 
 function KindFields({
@@ -506,6 +612,17 @@ function KindFields({
           <SelectField label="Play mode" value={current.constraints.playMode} onChange={(value) => patchConstraints({ playMode: value })} options={[{ value: "melodic", label: "Melodic" }, { value: "harmonic", label: "Harmonic" }]} />
           <Input label="Min midi" value={String(current.constraints.range.minMidi)} onChange={(value) => patchConstraints({ range: { ...current.constraints.range, minMidi: Number(value) } })} type="number" />
           <Input label="Max midi" value={String(current.constraints.range.maxMidi)} onChange={(value) => patchConstraints({ range: { ...current.constraints.range, maxMidi: Number(value) } })} type="number" />
+        </div>
+      );
+    }
+    case "melodic_direction": {
+      const current = config as Extract<ExerciseTemplateConfig, { generator: "melodic_direction" }>;
+      return (
+        <div className="grid gap-3 sm:grid-cols-4">
+          <SelectField label="Dirección" value={current.constraints.direction} onChange={(value) => patchConstraints({ direction: value })} options={[{ value: "ascending", label: "Asciende" }, { value: "descending", label: "Desciende" }, { value: "both", label: "Ambas" }]} />
+          <Input label="Semitonos" value={current.constraints.semitones.join(", ")} onChange={(value) => patchConstraints({ semitones: splitCSV(value).map(Number) })} />
+          <Input label="MIDI mínimo" value={String(current.constraints.range.minMidi)} onChange={(value) => patchConstraints({ range: { ...current.constraints.range, minMidi: Number(value) } })} type="number" />
+          <Input label="MIDI máximo" value={String(current.constraints.range.maxMidi)} onChange={(value) => patchConstraints({ range: { ...current.constraints.range, maxMidi: Number(value) } })} type="number" />
         </div>
       );
     }

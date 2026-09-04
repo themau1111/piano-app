@@ -1,6 +1,15 @@
 # MusicAula
 
-Frontend de aprendizaje de piano y teoría musical construido con Next.js, React y TypeScript. La API de catálogo, ejercicios y progreso se configura mediante `NEXT_PUBLIC_API_URL`; la autenticación usa Supabase.
+Frontend de MusicAula, una plataforma de aprendizaje de solfeo construida con
+Next.js, React y TypeScript. El piano visual actual es un apoyo para ciertas
+actividades, no el alcance definitivo del producto. La API de catálogo,
+ejercicios y progreso se configura mediante `NEXT_PUBLIC_API_URL`; la
+autenticación usa Supabase.
+
+La hoja de ruta de producto por incrementos está en
+[`docs/roadmap-mvps.md`](docs/roadmap-mvps.md). El contexto pedagógico,
+capacidades actuales y límites del producto se mantienen en
+[`AGENTS.md`](AGENTS.md).
 
 ## Desarrollo
 

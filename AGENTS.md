@@ -5,14 +5,18 @@
 
 ## 1. Propósito
 
-**MusicAula** es una plataforma web para aprender música, inicialmente centrada
-en piano/teclado y teoría musical. Debe ayudar a una persona a **comprender,
-escuchar, leer y tocar**, no solamente a contestar preguntas.
+**MusicAula** es una plataforma web de aprendizaje de música centrada
+inicialmente en **solfeo**: lectura, ritmo, oído y teoría conectados. Debe
+ayudar a una persona a **comprender, escuchar, leer y hacer música**, no
+solamente a contestar preguntas. El piano/teclado actual es una interfaz de
+apoyo visual y sonoro; una ruta de piano podrá añadirse después como sección
+instrumental específica, no como definición del producto.
 
 El producto debe poder crecer sin quedar atado a un formato fijo de lección o
 ejercicio. La unidad de aprendizaje puede evolucionar: una explicación breve,
-un reto de escucha, práctica en teclado, lectura en pentagrama, una canción,
-un proyecto de composición o una combinación de estos.
+un reto de escucha, lectura en pentagrama, práctica con una interfaz visual o
+instrumento, una canción, un proyecto de composición o una combinación de
+estos.
 
 ### Principios no negociables
 
@@ -25,8 +29,9 @@ un proyecto de composición o una combinación de estos.
 3. **Progresión gradual y adaptable.** Introducir una variable nueva por vez;
    reutilizar habilidades previas; ajustar dificultad con desempeño, objetivo,
    tiempo disponible y experiencia declarada.
-4. **Música conectada.** Relacionar teoría, oído, lectura y teclado. Evitar que
-   los ejercicios se conviertan en trivias aisladas.
+4. **Música conectada.** Relacionar teoría, oído, lectura y ritmo. El teclado
+   u otro instrumento pueden reforzar esas relaciones, sin convertirse en un
+   requisito ni en el centro del currículo. Evitar trivias aisladas.
 5. **Accesible y amable.** Español como idioma inicial, lenguaje claro,
    navegación con teclado, contraste suficiente, audio opcional/repetible y
    alternativas cuando no haya teclado MIDI.
@@ -38,8 +43,12 @@ un proyecto de composición o una combinación de estos.
 ## 2. Estado actual verificado
 
 El repositorio contiene el **frontend Next.js 15 + React 19 + TypeScript** de
-MusicAula. La API de catálogo, ejecución y progreso es externa y se configura
-con `NEXT_PUBLIC_API_URL`; la autenticación se realiza con Supabase.
+MusicAula. La API de catálogo, ejecución y progreso vive en el repositorio
+hermano `../piano-app-api` y se configura con `NEXT_PUBLIC_API_URL`; la
+autenticación se realiza con Supabase. Es parte modificable del producto, junto
+con su base de datos, cuando un cambio de aprendizaje requiera un contrato o
+modelo de persistencia distinto; todo cambio debe coordinarse y versionarse en
+ambos repositorios.
 
 Las redirecciones OAuth se construyen con `NEXT_PUBLIC_APP_URL` (con fallback a
 `window.location.origin` sólo para desarrollo). Cada URL pública debe estar
@@ -64,7 +73,10 @@ progreso / cola de práctica`
   `localStorage`, permite responder, repetir audio, revelar y avanzar.
 - Catálogo administrativo: un usuario `admin` puede crear secciones, temas y
   plantillas, previsualizarlas, activarlas y ejecutar un seed básico
-  (`src/app/admin/page.tsx`).
+  (`src/app/admin/page.tsx`). También puede sembrar una sección independiente
+  de fundamentos de solfeo; no reemplaza el catálogo histórico piano-first.
+  Puede además crear o editar lecciones y sus bloques ordenados; las prácticas
+  vinculadas se validan contra el tema de la lección.
 - Preferencias: nivel, objetivos, estilos, lectura, teoría, tiempo de práctica,
   instrumentos y equipo (`src/lib/prefs.ts`).
 - Uso sin cuenta: los ejercicios se pueden ejecutar como invitado y sus
@@ -83,6 +95,7 @@ dominio (`minAttempts`, precisión y racha).
 | `keyboard_note` | Ubicar una nota en el teclado |
 | `staff_note` | Leer nota en clave de sol y tocarla |
 | `ear_interval` | Reconocer intervalos melódicos o armónicos |
+| `melodic_direction` | Distinguir por oído si dos sonidos ascienden o descienden |
 | `scale_construction` | Construir escalas en el teclado |
 | `chord_identification` | Reconocer / construir acordes e inversiones |
 
@@ -92,15 +105,17 @@ react-piano y Tonal. Se usa una fuente Bravura local para música.
 ### Límites actuales que deben asumirse hasta que cambien
 
 - No hay backend de ejercicios en este repositorio; no simular ni asumir sus
-  reglas internas. Cambios al contrato deben coordinarse con la API.
+  reglas internas. Los cambios necesarios al contrato, API o base de datos se
+  implementan y validan de forma coordinada en el repositorio hermano, con
+  migraciones y compatibilidad de runs existentes cuando corresponda.
 - El teclado visual funciona; la entrada MIDI, evaluación de tempo y evaluación
   por micrófono no están implementadas como producto fiable.
 - El chat actual usa Gemini mediante `/api/chat/stream`; no es todavía un tutor
   conectado al progreso ni una fuente curricular.
-- Sólo existe una capa inicial de lecciones: la experiencia se concentra hoy en
-  secciones, temas y ejercicios. No presentar el producto como currículo
-  completo hasta añadir objetivos, explicaciones, prerequisitos y cierre por
-  lección.
+- Lecciones, bloques y progreso de lección ya tienen persistencia, contrato
+  HTTP, experiencia de estudiante y autoría administrativa. No presentar el
+  producto como currículo completo hasta completar y validar una ruta
+  principiante con estudiantes.
 
 ## 3. Modelo pedagógico de referencia
 
@@ -137,13 +152,14 @@ pruebas con respuestas correctas, incorrectas y casos límite.
 El currículo no debe ser estrictamente lineal, pero sí tener dependencias
 visibles. Primera ruta recomendada:
 
-1. **Fundamentos de teclado:** nombres de notas, orientación, pulso y postura.
+1. **Fundamentos de solfeo:** pulso, nombres de notas, altura y escucha básica.
 2. **Lectura y ritmo:** pentagrama, claves, figuras, compases y lectura corta.
-3. **Intervalos y escalas:** reconocer, cantar/tocar, construir y escuchar.
+3. **Intervalos y escalas:** reconocer, cantar, leer, construir y escuchar.
 4. **Acordes y armonía funcional:** tríadas, inversiones, tonalidad y
    progresiones sencillas.
-5. **Repertorio y creatividad:** acompañamientos, patrones, canciones,
-   improvisación y composición pequeña.
+5. **Aplicación y creatividad:** patrones rítmicos/melódicos, canciones,
+   improvisación y composición pequeña. Las rutas instrumentales, incluido
+   piano, se conectarán aquí sin ser requisito para solfeo.
 
 Cada habilidad debería pasar, cuando corresponda, por: explicación breve →
 ejemplo audible/visual → práctica guiada → recuperación espaciada → aplicación
@@ -153,10 +169,20 @@ explicación.
 
 ## 5. Backlog priorizado
 
+La secuencia, alcance y puertas de validación de los incrementos de producto
+están en [`docs/roadmap-mvps.md`](docs/roadmap-mvps.md). Ese documento separa
+de forma explícita lo entregado de lo planificado y coordina las dependencias
+con la API hermana (`../piano-app-api`). Este backlog conserva el inventario de
+oportunidades, pero no sustituye el plan por MVPs.
+
+El estado operativo compacto, las validaciones recientes y el siguiente relevo
+están en [`docs/current-status.md`](docs/current-status.md).
+
 ### Próximo: consolidar el núcleo
 
-- [ ] Definir el modelo de **lección**: objetivo, prerequisitos, bloques de
-  explicación/práctica, criterio de finalización y siguiente paso.
+- [x] Exponer el modelo persistido de **lección**: objetivo, prerequisitos,
+  bloques de explicación/práctica, criterio de finalización y siguiente paso en
+  API, autoría y experiencia de estudiante.
 - [ ] Completar una ruta de principiante de punta a punta y validarla con
   estudiantes reales antes de multiplicar contenido.
 - [ ] Mostrar feedback didáctico y accionable por error, no sólo correcto /
@@ -165,8 +191,8 @@ explicación.
   espaciada explicable: “practica esto porque…”.
 - [ ] Añadir pruebas de contrato para cada `ExerciseKind` y ejemplos de seeds
   reproducibles para diseño y QA.
-- [ ] Corregir los conflictos de merge visibles en `README.md` y reemplazarlo
-  por una introducción real del proyecto y comandos verificables.
+- [ ] Validar que `README.md` conserva una introducción real y comandos
+  verificables frente al proyecto; corregir cualquier diferencia que aparezca.
 
 ### Después: mejorar la práctica musical
 

@@ -45,6 +45,7 @@ export function ExerciseRunner({
   const [active, setActive] = useState<Set<number>>(new Set());
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [intervalChoice, setIntervalChoice] = useState("");
+  const [directionChoice, setDirectionChoice] = useState<"ascending" | "descending" | "">("");
   const [chordName, setChordName] = useState("");
   const [inversion, setInversion] = useState<string>("");
 
@@ -100,6 +101,7 @@ export function ExerciseRunner({
           setRun(existing);
           setSelected(new Set());
           setIntervalChoice("");
+          setDirectionChoice("");
           setChordName("");
           setInversion("");
           if (existing.presentation.autoReplay) {
@@ -116,6 +118,7 @@ export function ExerciseRunner({
       setRun(started);
       setSelected(new Set());
       setIntervalChoice("");
+      setDirectionChoice("");
       setChordName("");
       setInversion("");
       if (started.presentation.autoReplay) {
@@ -220,6 +223,7 @@ export function ExerciseRunner({
     run &&
     (run.input.mode === "single-piano" || run.input.mode === "multi-piano" || run.input.mode === "chord-builder") &&
     normalizeSelection(selected).length >= ("minSelections" in run.input ? run.input.minSelections : 1);
+  const isRunActive = run?.status === "active";
 
   const selectedLabels = normalizeSelection(selected).map(midiToLabel);
   const revealLabel = run?.feedback?.reveal?.label;
@@ -266,7 +270,7 @@ export function ExerciseRunner({
                 setIntervalChoice(option);
                 submitAnswer({ interval: option });
               }}
-              disabled={working}
+              disabled={working || !isRunActive}
               className={cn(
                 "rounded-2xl border px-4 py-3 text-sm transition",
                 intervalChoice === option ? "border-cyan-300 bg-cyan-300/10 text-cyan-100" : "border-white/10 bg-white/5 hover:bg-white/10"
@@ -275,6 +279,33 @@ export function ExerciseRunner({
               {option}
             </button>
           ))}
+        </div>
+      )}
+
+      {run.input.mode === "choice-options" && (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {run.input.options.map((option) => {
+            const label = option === "ascending" ? "Asciende" : "Desciende";
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => {
+                  setDirectionChoice(option);
+                  submitAnswer({ direction: option });
+                }}
+                disabled={working || !isRunActive}
+                className={cn(
+                  "rounded-2xl border px-4 py-3 text-sm transition",
+                  directionChoice === option
+                    ? "border-cyan-300 bg-cyan-300/10 text-cyan-100"
+                    : "border-white/10 bg-white/5 hover:bg-white/10"
+                )}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -349,12 +380,12 @@ export function ExerciseRunner({
                 inversion: inversion ? Number(inversion) : undefined,
               })
             }
-            disabled={working || !canSubmitPiano}
+            disabled={working || !isRunActive || !canSubmitPiano}
           >
             Enviar respuesta
           </Button>
         )}
-        <Button variant="ghost" onClick={handleReveal} disabled={working}>
+        <Button variant="ghost" onClick={handleReveal} disabled={working || !isRunActive}>
           Ver solución
         </Button>
         <Button variant="solid" onClick={handleNext} disabled={working}>

@@ -38,6 +38,23 @@ export type ExerciseUpsertDto = {
   config: ExerciseTemplateConfig;
   is_active?: boolean;
 };
+export type LessonUpsertDto = {
+  topic_id: number;
+  code: string;
+  title: string;
+  summary?: string;
+  objective: string;
+  prerequisites: string[];
+  completion: Record<string, unknown>;
+  next_lesson_code?: string | null;
+  is_active?: boolean;
+};
+export type LessonBlockUpsertDto = {
+  position: number;
+  kind: "explanation" | "exercise" | "reflection" | "recap";
+  content: Record<string, unknown>;
+  exercise_id?: number | null;
+};
 
 export const listSectionsFull = () => authFetch<AdminCatalogData>("/admin/sections");
 export const upsertSection = (dto: SectionUpsertDto) =>
@@ -73,5 +90,11 @@ export const toggleExercise = (id: number, is_active: boolean) =>
   });
 export const deleteExercise = (id: number) =>
   authFetch(`/admin/exercises/${id}`, { method: "DELETE" });
+export const upsertLesson = (dto: LessonUpsertDto) =>
+  authFetch<{ id: number }>("/admin/lessons", { method: "POST", body: JSON.stringify(dto) });
+export const replaceLessonBlocks = (id: number, blocks: LessonBlockUpsertDto[]) =>
+  authFetch(`/admin/lessons/${id}/blocks`, { method: "POST", body: JSON.stringify({ blocks }) });
 export const seedBasic = () =>
   authFetch("/admin/seed/basic", { method: "POST" });
+export const seedSolfegeFoundations = () =>
+  authFetch("/admin/seed/solfege-foundations", { method: "POST" });

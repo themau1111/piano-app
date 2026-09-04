@@ -4,6 +4,8 @@ import {
   ExerciseCatalogItem,
   ExerciseDetail,
   ExerciseRunSnapshot,
+  LessonDetail,
+  LessonSummary,
   PracticeQueueResponse,
   ProgressResponse,
   Section,
@@ -67,6 +69,22 @@ export async function fetchTopicsAllBySectionCode() {
 
 export async function fetchExercisesByTopicId(topicId: string | number) {
   return apiFetch<ExerciseCatalogItem[]>(`/topics/${Number(topicId)}/exercises`);
+}
+
+export async function fetchLessonsByTopicId(topicId: string | number) {
+  return apiFetch<LessonSummary[]>(`/topics/${Number(topicId)}/lessons`);
+}
+
+export async function fetchLessonById(id: string | number) {
+  return apiFetch<LessonDetail>(`/lessons/${Number(id)}`);
+}
+
+export async function evaluateLessonProgress(id: string | number) {
+  return apiFetch<{ completed: boolean; state: { missing?: string[] } }>(
+    `/lessons/${Number(id)}/evaluate-progress`,
+    { method: "POST", body: JSON.stringify({}) },
+    { auth: true },
+  );
 }
 
 export async function fetchExerciseById(id: string | number) {
