@@ -1,6 +1,6 @@
 # Estado actual y relevo de implementación
 
-Actualizado: 4 de septiembre de 2026 (UTC).
+Actualizado: 5 de septiembre de 2026 (UTC).
 
 ## Dirección de producto confirmada
 
@@ -104,18 +104,41 @@ Pendientes operativos de Supabase, sin cambio automático realizado:
 
 ## Siguiente orden de trabajo
 
-1. Esperar a que los despliegues de ambos `main` estén saludables. Con una
-   sesión `admin`, ejecutar `Seed fundamentos de solfeo` desde `/admin` y
-   confirmar que la sección deja de devolver 404.
-2. Realizar el E2E autenticado: abrir/editar la lección, iniciar una corrida,
-   responder correcto e incorrecto, repetir audio, revelar, avanzar y usar
-   **Comprobar mi avance**. Registrar cualquier diferencia entre frontend y
-   API. Las pruebas de motor, servicio y HTTP ya están cubiertas localmente.
+1. Verificar en producción la corrección de recarga descrita abajo después
+   de su despliegue.
+2. Completar la validación del estado de lección completada y la escucha
+   humana del audio. Las pruebas de motor, servicio y HTTP ya están cubiertas
+   localmente; la sesión real verificó el estado incompleto y su persistencia.
 3. Usar ese modelo para cerrar una ruta principiante de solfeo antes de ampliar
    el catálogo: pulso, nombres de notas, altura/dirección y escucha básica.
 4. Después, mejorar feedback por error y repetición espaciada usando `weakTags`,
    precisión y fecha de práctica, con una explicación visible de por qué se
    propone cada repaso.
+
+## Pruebas del navegador integrado — 5 de septiembre (UTC)
+
+- Producción, sesión administrativa real: seed de fundamentos ejecutado;
+  sección, tema, ejercicio 10 y lección 1 disponibles sin 404. Autoría abrió
+  objetivo, criterio y tres bloques; se guardaron sin modificar el contenido
+  y la lectura del estudiante conservó sus textos y práctica vinculada.
+- Flujo autenticado: respuesta incorrecta con explicación, repetir, respuesta
+  correcta mediante teclado, siguiente corrida y revelar aprobados. El avance
+  pasó de seis intentos pendientes a cuatro, precisión 50 % y racha 1. Revelar
+  no añadió un acierto. Estas pruebas dejan dos respuestas en el perfil usado.
+- Se reprodujo un bloqueo al recargar la corrida: la hidratación esperaba
+  `Tone.start()` antes de quitar el indicador de carga. La corrección separa
+  carga y audio; sólo reproduce automáticamente con contexto activo y muestras
+  listas. El botón manual activa el audio antes de pedir la repetición a la API.
+  También hay mensajes recuperables para errores de carga y reproducción.
+- Corrección validada con `npm run build` (incluye lint/tipos) y navegador
+  integrado en `localhost:3000`: entrada directa y recarga de corrida guardada
+  muestran controles sin gesto previo. El puerto 3100 no está admitido por
+  CORS de la API; usar 3000 para esta prueba.
+- React Doctor volvió a fallar por el binding opcional de `oxc-parser` en la
+  instalación temporal de npm. La calidad audible y la finalización de lección
+  con una sesión real siguen pendientes; no se infieren de los controles UI.
+- Observación menor: tras el seed, la portada mostró el catálogo anterior
+  hasta recargar; revisar invalidación de caché en un incremento posterior.
 
 ## Documentos fuente
 

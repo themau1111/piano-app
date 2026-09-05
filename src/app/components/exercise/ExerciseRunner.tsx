@@ -41,6 +41,8 @@ export function ExerciseRunner({
   const sampler = useRef<Tone.Sampler | null>(null);
   const [run, setRun] = useState<ExerciseRunSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [audioError, setAudioError] = useState(false);
   const [working, setWorking] = useState(false);
   const [active, setActive] = useState<Set<number>>(new Set());
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -91,8 +93,18 @@ export function ExerciseRunner({
     });
   }, []);
 
+  const autoReplay = useCallback((snapshot: ExerciseRunSnapshot) => {
+    // A fresh page may need a user gesture to unlock audio. Never make
+    // loading the exercise depend on that gesture or on external samples.
+    if (snapshot.presentation.autoReplay && Tone.getContext().state === "running" && sampler.current?.loaded) {
+      void playEvents(snapshot.presentation.playback).catch(() => setAudioError(true));
+    }
+  }, [playEvents]);
+
   const hydrateRun = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
+    setAudioError(false);
     try {
       const storedRunId = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
       if (storedRunId) {
@@ -104,9 +116,7 @@ export function ExerciseRunner({
           setDirectionChoice("");
           setChordName("");
           setInversion("");
-          if (existing.presentation.autoReplay) {
-            await playEvents(existing.presentation.playback);
-          }
+          autoReplay(existing);
           return;
         }
       }
@@ -121,13 +131,13 @@ export function ExerciseRunner({
       setDirectionChoice("");
       setChordName("");
       setInversion("");
-      if (started.presentation.autoReplay) {
-        await playEvents(started.presentation.playback);
-      }
+      autoReplay(started);
+    } catch {
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
-  }, [exercise.id, playEvents, storageKey]);
+  }, [exercise.id, autoReplay, storageKey]);
 
   useEffect(() => {
     void hydrateRun();
@@ -162,10 +172,15 @@ export function ExerciseRunner({
   async function handleReplay() {
     if (!run) return;
     setWorking(true);
+    setAudioError(false);
     try {
+      // Unlock audio directly from the button gesture, before the HTTP call.
+      await Tone.start();
       const replay = await replayExerciseRun(run.runId);
       await playEvents(replay.playback);
       await refreshRun(run.runId);
+    } catch {
+      setAudioError(true);
     } finally {
       setWorking(false);
     }
@@ -228,12 +243,22 @@ export function ExerciseRunner({
   const selectedLabels = normalizeSelection(selected).map(midiToLabel);
   const revealLabel = run?.feedback?.reveal?.label;
 
+  if (loadError) {
+    return (
+      <div role="alert" className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-6 text-white/80">
+        <p>No se pudo cargar la práctica. Intenta de nuevo.</p>
+        <Button onClick={() => void hydrateRun()}>Reintentar</Button>
+      </div>
+    );
+  }
+
   if (loading || !run) {
     return <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/80">Cargando ejercicio…</div>;
   }
 
   return (
     <section className="space-y-5 rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(16,27,51,0.95),rgba(7,13,26,0.95))] p-5 text-white shadow-2xl">
+      {audioError && <p role="alert">No se pudo reproducir el audio. Comprueba tu conexión y pulsa Reproducir para intentarlo de nuevo.</p>}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-300/70">{run.exercise.skillCode}</p>

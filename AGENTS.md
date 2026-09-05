@@ -70,7 +70,9 @@ progreso / cola de práctica`
   página subyacente y permite desplazarse hasta el mapa de intervalos.
 - Contenido: secciones y temas navegables bajo `src/app/sections/`.
 - Ejecución: `ExerciseRunner` genera/inicia una corrida, conserva su `runId` en
-  `localStorage`, permite responder, repetir audio, revelar y avanzar.
+  `localStorage`, permite responder, repetir audio, revelar y avanzar. La carga
+  de la corrida no espera al audio: si el contexto todavía no está habilitado
+  o las muestras no están listas, el estudiante inicia con **Reproducir**.
 - Catálogo administrativo: un usuario `admin` puede crear secciones, temas y
   plantillas, previsualizarlas, activarlas y ejecutar un seed básico
   (`src/app/admin/page.tsx`). También puede sembrar una sección independiente
