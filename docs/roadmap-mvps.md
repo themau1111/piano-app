@@ -29,18 +29,21 @@ Ya existe el flujo de secciones y temas, los ejercicios ejecutables, el piano
 visual, reproducción de audio, cuentas de Supabase, preferencias y una cola de
 práctica. La API hermana (`../piano-app-api`) es responsable de catálogo,
 generación/evaluación de corridas, progreso autenticado y administración. Sus
-cinco tipos actuales son `keyboard_note`, `staff_note`, `ear_interval`,
+seis tipos actuales son `keyboard_note`, `staff_note`, `ear_interval`,
 `melodic_direction`, `scale_construction` y `chord_identification`. El seed
 `solfege-foundations` crea la primera actividad de dirección melódica sin
-instrumento; todavía no constituye el modelo completo de lección.
+instrumento y la lección persistida «¿La melodía sube o baja?», con explicación,
+práctica y cierre; todavía no constituye una unidad principiante completa.
 
 No están entregados como producto fiable: contenido de una ruta completa,
 feedback por error para todo el catálogo, MIDI, evaluación de tempo o
 micrófono, migración del historial de invitado y un tutor IA ligado al
 aprendizaje. La primera experiencia navegable de lección ya lee bloques y
 evalúa su evidencia desde API e interfaz; también existe autoría administrativa
-para lecciones y bloques. Faltan la prueba de flujo desplegado y completar la
-unidad revisada.
+para lecciones y bloques. El flujo desplegado ya se probó con sesión real para
+autoría, práctica y avance incompleto. Faltan la comprobación por navegador del
+avance completado, la escucha humana y completar la unidad revisada. El relevo
+con evidencia y responsables está en [`current-status.md`](current-status.md).
 
 ## Secuencia de entrega
 
@@ -69,7 +72,7 @@ base honesta para pruebas con usuarios.
 
 - Validar el README de frontend con un arranque real, variables y límites
   comprobables; corregir cualquier diferencia que aparezca.
-- Pruebas de contrato reproducibles para los cinco `ExerciseKind`: generación,
+- Pruebas de contrato reproducibles para los seis `ExerciseKind`: generación,
   respuesta correcta, incorrecta, revelar y run ya iniciado.
 - Seeds reproducibles y un procedimiento de QA que cubra navegación por
   teclado, carga, error, repetir, revelar y siguiente actividad.
@@ -145,10 +148,11 @@ de lanzar la prueba.
 | Accesibilidad | Audio repetible y botones con texto; no hay gesto musical, instrumento ni entrada de micrófono obligatorios. |
 
 Se siembra con `POST /admin/seed/solfege-foundations` en la sección
-`solfege-foundations` y tema `height-and-direction`. Esta actividad no es una
-lección completa: el modelo persistido de lecciones, bloques y prerequisitos
-ya existe y la primera lectura y autoría están expuestas en API e interfaz.
-Faltan pruebas HTTP de contrato del avance y cargar la unidad revisada completa.
+`solfege-foundations` y tema `height-and-direction`. La actividad está vinculada
+a la primera lección persistida; lectura, autoría y evaluación de avance están
+expuestas en API e interfaz, con pruebas HTTP de contrato. Falta cerrar la
+validación humana y la unidad revisada completa; una lección implementada no
+equivale a una ruta curricular validada.
 
 ## MVP 2 — Práctica guiada y repaso explicable
 

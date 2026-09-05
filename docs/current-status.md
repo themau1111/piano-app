@@ -13,7 +13,7 @@ El frontend vive en este repositorio y la API/NestJS junto con el esquema de
 datos viven en `../piano-app-api`. Ambos son parte modificable del producto y
 deben evolucionar coordinadamente cuando cambien los contratos de aprendizaje.
 
-## Incremento terminado localmente
+## Incremento implementado y desplegado
 
 Se completó el primer ejercicio nativo de solfeo centrado en oído:
 
@@ -50,9 +50,12 @@ Promoción y despliegue:
   integrado y subido a `development` y `main`.
 - API: commit `a15d9bc` (`feat: add lesson contracts and solfege foundation`)
   integrado y subido a `development` y `main`.
-- Ambos directorios locales quedaron limpios en `development`. Los despliegues
-  automáticos se dispararon desde `main`, pero aún no se verificaron contra una
-  sesión administrativa real.
+- Frontend: corrección `ada2faa` (`fix: prevent exercise loading from waiting
+  for audio`) integrada y subida por `development → main`. Vercel confirmó
+  `READY` para ese commit en el dominio de producción.
+- El flujo desplegado se verificó con sesión administrativa real. Tras el
+  despliegue de la corrección, la entrada directa recuperó la corrida revelada
+  con su solución y controles, sin quedarse esperando la activación del audio.
 
 ## Base de datos y acceso
 
@@ -104,16 +107,22 @@ Pendientes operativos de Supabase, sin cambio automático realizado:
 
 ## Siguiente orden de trabajo
 
-1. Verificar en producción la corrección de recarga descrita abajo después
-   de su despliegue.
-2. Completar la validación del estado de lección completada y la escucha
-   humana del audio. Las pruebas de motor, servicio y HTTP ya están cubiertas
-   localmente; la sesión real verificó el estado incompleto y su persistencia.
-3. Usar ese modelo para cerrar una ruta principiante de solfeo antes de ampliar
-   el catálogo: pulso, nombres de notas, altura/dirección y escucha básica.
-4. Después, mejorar feedback por error y repetición espaciada usando `weakTags`,
-   precisión y fecha de práctica, con una explicación visible de por qué se
-   propone cada repaso.
+Los pendientes técnicos siguen a cargo del agente; no son una lista de tareas
+que el usuario deba ejecutar. La revisión humana complementa las pruebas y no
+bloquea el trabajo técnico independiente.
+
+| Orden | Responsable | Próxima acción y evidencia de cierre |
+| --- | --- | --- |
+| 1 | Agente | Verificar por navegador el estado de lección completada al cumplir 6 intentos, 80 % de precisión y racha 2, y comprobar que persiste al recargar. Usar una sesión de prueba e identificar sus datos; no presentar intentos de QA como evidencia de aprendizaje humano. Los casos de servicio/HTTP ya están cubiertos. |
+| 2 | Agente | React Doctor sigue sin diagnóstico: con Node 18 falla por el binding opcional de `oxc-parser` y con Node 20 queda detenido durante su instalación temporal. Reintentar cuando la caché/registro de npm esté disponible, sin cambiar dependencias de producto. |
+| 3 | Agente | Implementada la invalidación de las consultas públicas de catálogo tras toda mutación administrativa, incluido el seed. Falta comprobarlo en navegador cuando el servidor local pueda iniciarse en el puerto 3000 o tras el próximo despliegue. |
+| 4 | Usuario u otra persona que escuche | Probar varios pares y su repetición: confirmar que se oyen ambas notas, que el orden se distingue y que el feedback coincide con la dirección escuchada. El agente prepara el recorrido y registra/corrige los hallazgos. |
+| 5 | Agente + revisión humana | Preparar la unidad principiante (pulso, altura/dirección, nombres de notas y lectura inicial), con objetivos, prerrequisitos, ejemplos y criterios. Una persona con conocimiento musical revisa antes de publicar contenido curricular nuevo. |
+| 6 | Usuario/equipo + agente | Organizar prueba con estudiantes reales. El agente prepara protocolo y criterios de éxito y documenta resultados; el equipo aporta participantes y revisión pedagógica. No declarar currículo validado antes de esta evidencia. |
+
+Después de cerrar y validar la primera unidad, el agente continúa con feedback
+por error y repaso explicable usando `weakTags`, precisión y fecha de práctica,
+según las puertas de avance de `docs/roadmap-mvps.md`.
 
 ## Pruebas del navegador integrado — 5 de septiembre (UTC)
 
@@ -134,11 +143,17 @@ Pendientes operativos de Supabase, sin cambio automático realizado:
   integrado en `localhost:3000`: entrada directa y recarga de corrida guardada
   muestran controles sin gesto previo. El puerto 3100 no está admitido por
   CORS de la API; usar 3000 para esta prueba.
+- Verificación posterior al despliegue `ada2faa`: en producción se recuperó
+  la misma corrida autenticada en estado `revealed`, con solución visible y
+  botones Reproducir/Siguiente disponibles. El bloqueo observado quedó resuelto.
 - React Doctor volvió a fallar por el binding opcional de `oxc-parser` en la
   instalación temporal de npm. La calidad audible y la finalización de lección
   con una sesión real siguen pendientes; no se infieren de los controles UI.
 - Observación menor: tras el seed, la portada mostró el catálogo anterior
-  hasta recargar; revisar invalidación de caché en un incremento posterior.
+  hasta recargar. La administración ahora invalida las consultas `sections`,
+  `topics`, `topicsBySection`, `topicExercises` y `topicLessons`, además de su
+  propio catálogo, después de una mutación o seed. `npm run build` aprobó con
+  Node 20.19.5; queda la comprobación visual del refresco.
 
 ## Documentos fuente
 

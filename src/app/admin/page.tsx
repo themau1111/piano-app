@@ -204,21 +204,29 @@ function AdminCatalogView() {
     return map;
   }, [topics]);
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["adminCatalog"] });
+  const invalidateCatalog = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ["adminCatalog"] }),
+      qc.invalidateQueries({ queryKey: ["sections"] }),
+      qc.invalidateQueries({ queryKey: ["topics"] }),
+      qc.invalidateQueries({ queryKey: ["topicsBySection"] }),
+      qc.invalidateQueries({ queryKey: ["topicExercises"] }),
+      qc.invalidateQueries({ queryKey: ["topicLessons"] }),
+    ]);
 
   const saveSection = useMutation({
     mutationFn: upsertSection,
-    onSuccess: invalidate,
+    onSuccess: invalidateCatalog,
   });
   const saveTopic = useMutation({
     mutationFn: upsertTopic,
-    onSuccess: invalidate,
+    onSuccess: invalidateCatalog,
   });
   const saveExercise = useMutation({
     mutationFn: upsertExercise,
     onSuccess: () => {
       setPreview([]);
-      invalidate();
+      invalidateCatalog();
     },
   });
   const previewMutation = useMutation({
@@ -227,27 +235,27 @@ function AdminCatalogView() {
   });
   const toggleMutation = useMutation({
     mutationFn: ({ id, is_active }: { id: number; is_active: boolean }) => toggleExercise(id, is_active),
-    onSuccess: invalidate,
+    onSuccess: invalidateCatalog,
   });
   const deleteExerciseMutation = useMutation({
     mutationFn: deleteExercise,
-    onSuccess: invalidate,
+    onSuccess: invalidateCatalog,
   });
   const deleteSectionMutation = useMutation({
     mutationFn: deleteSection,
-    onSuccess: invalidate,
+    onSuccess: invalidateCatalog,
   });
   const deleteTopicMutation = useMutation({
     mutationFn: deleteTopic,
-    onSuccess: invalidate,
+    onSuccess: invalidateCatalog,
   });
   const seedMutation = useMutation({
     mutationFn: seedBasic,
-    onSuccess: invalidate,
+    onSuccess: invalidateCatalog,
   });
   const seedSolfegeMutation = useMutation({
     mutationFn: seedSolfegeFoundations,
-    onSuccess: invalidate,
+    onSuccess: invalidateCatalog,
   });
 
   function setCommon<K extends keyof ExerciseTemplateConfig>(key: K, value: ExerciseTemplateConfig[K]) {
@@ -283,7 +291,7 @@ function AdminCatalogView() {
             <button onClick={() => seedSolfegeMutation.mutate()} className="rounded-2xl border border-cyan-300/30 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-300/10">
               {seedSolfegeMutation.isPending ? "Sembrando…" : "Seed fundamentos de solfeo"}
             </button>
-            <button onClick={() => invalidate()} className="rounded-2xl bg-cyan-300 px-4 py-2 text-sm font-medium text-slate-950">
+            <button onClick={() => invalidateCatalog()} className="rounded-2xl bg-cyan-300 px-4 py-2 text-sm font-medium text-slate-950">
               Refrescar
             </button>
           </div>
@@ -491,7 +499,7 @@ function AdminCatalogView() {
           exercises={exercises}
           lessons={data?.lessons ?? []}
           lessonBlocks={data?.lessonBlocks ?? []}
-          onSaved={invalidate}
+          onSaved={invalidateCatalog}
         />
 
         {isLoading && <div className="text-sm text-white/60">Cargando catálogo…</div>}
