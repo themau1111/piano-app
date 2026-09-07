@@ -136,6 +136,30 @@ export default function HomePage() {
           </section>
         )}
 
+        {user && progress?.items?.length ? (
+          <Card title="Progreso por habilidad">
+            <p className="text-sm leading-6 text-white/70">
+              Este estado usa intentos, precisión y racha según el criterio de cada actividad.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {progress.items.map((item) => (
+                <div key={item.exerciseId} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-cyan-300/70">{item.skillCode}</p>
+                      <h3 className="mt-1 font-medium">{item.title}</h3>
+                    </div>
+                    <LearningStateBadge state={item.learningState} />
+                  </div>
+                  <p className="mt-2 text-sm text-white/60">
+                    {item.stats?.attempts ?? 0} intentos · {Math.round(((item.stats?.correct ?? 0) / Math.max(item.stats?.attempts ?? 0, 1)) * 100)}% precisión
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ) : null}
+
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {(sections ?? []).map((section) => (
             <Link key={section.id} href={`/sections/${section.code}`} className="block rounded-[24px] border border-white/10 bg-white/5 p-5 transition hover:-translate-y-0.5 hover:bg-white/10">
@@ -148,6 +172,21 @@ export default function HomePage() {
       </div>
     </main>
   );
+}
+
+function LearningStateBadge({ state }: { state: "practiced" | "in_progress" | "mastered" }) {
+  const labels = {
+    practiced: "Practicado",
+    in_progress: "En progreso",
+    mastered: "Dominado",
+  } as const;
+  const colors = {
+    practiced: "border-white/15 bg-white/5 text-white/75",
+    in_progress: "border-amber-300/30 bg-amber-300/10 text-amber-100",
+    mastered: "border-emerald-300/30 bg-emerald-300/10 text-emerald-100",
+  } as const;
+
+  return <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${colors[state]}`}>{labels[state]}</span>;
 }
 
 function practiceReason(item: PracticeQueueItem) {

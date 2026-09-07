@@ -318,6 +318,7 @@ export type ProgressResponse = {
     topicTitle: string;
     sectionCode: string;
     stats: ProgressStats | null;
+    learningState: "practiced" | "in_progress" | "mastered";
   }>;
   summary: {
     attempted: number;
