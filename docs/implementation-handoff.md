@@ -128,6 +128,14 @@ compilación y 4 pruebas e2e; el frontend aprobó `npm run build` con Node
 en macOS arm64; no se cambiaron dependencias de producto por ese fallo de la
 herramienta.
 
+Render publicó la API `f96cf04`. Desde una sesión administrativa autorizada se
+ejecutó el seed sin error: creó el tema «Pulso y silencio» (20), la plantilla
+`rhythm_pulse` (13) y la lección «Cuatro pulsos y un silencio» (7). La ruta
+pública y el runner cargaron con cuatro posiciones, un vacío accesible y los
+cuatro botones de respuesta. No se envió una respuesta durante esta
+comprobación, aunque abrir el runner crea una corrida activa. Es verificación
+técnica de catálogo y contrato, no una prueba humana de comprensión o ritmo.
+
 ## Flujo de integración
 
 Para cada repositorio: trabajar en `development`, ejecutar las validaciones,
