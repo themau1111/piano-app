@@ -158,6 +158,14 @@ la lección (15). Una corrida de invitado mostró `half + half` con opciones 3,
 4 y 5, sin audio ni respuesta enviada. Es validación técnica del flujo; faltan
 las pruebas humanas de comprensión, accesibilidad y umbrales de dominio.
 
+La recuperación final quedó publicada como API `79a99bb` y sembrada: tema
+«Repaso: escucha y lectura» (39, posición 6), prácticas 15 y 16, y lección 24.
+La respuesta pública de la lección confirmó sus bloques ordenados de
+explicación, dirección melódica, lectura de nota y recap. No se enviaron
+respuestas durante la comprobación. La ruta inicial queda completa a nivel
+técnico; la siguiente puerta sigue siendo pruebas humanas, diferidas por la
+decisión actual de producto.
+
 ## Flujo de integración
 
 Para cada repositorio: trabajar en `development`, ejecutar las validaciones,
