@@ -10,6 +10,11 @@ El frontend publicó el consumo del contrato mediante `development → main` con
 el commit `d84bf10`. El repositorio API hermano publicó su contrato mediante el
 mismo flujo con `b635a4d`.
 
+Después de ese relevo, la API publicó `6723e59` para entregar un `nextStep`
+tras error en los seis tipos de ejercicio y `4c0b0f4` para exponer
+`learningState` en cada elemento de progreso. El frontend publicó `b6e2f91`,
+que presenta los estados Practicado, En progreso y Dominado en la portada.
+
 Cambios frontend publicados recientemente:
 
 | Commit | Resultado |
@@ -80,10 +85,11 @@ reglas propias ni mostrar etiquetas internas.
 No modificar reglas de dominio de corridas existentes ni datos históricos. La
 evolución de campos debe ser opcional y compatible con runs ya persistidos.
 
-## Después del incremento
+## Siguiente límite de producto
 
-Con el contrato publicado y probado, implementar la primera unidad sólo como
-contenido revisado. El diseño aún no es currículo entregado:
+El núcleo técnico de MVP 2 ya ofrece feedback accionable, cola explicable y
+progreso por habilidad. La primera unidad sigue siendo un borrador y sólo se
+puede activar o ampliar como currículo tras revisión musical:
 [`mvp1-unit-draft.md`](mvp1-unit-draft.md). El siguiente grupo técnico es
 añadir ejercicios/semillas compatibles para nombres de notas y lectura inicial,
 siempre coordinando ambos repositorios y evitando prometer evaluación de ritmo,
