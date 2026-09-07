@@ -136,6 +136,13 @@ cuatro botones de respuesta. No se envió una respuesta durante esta
 comprobación, aunque abrir el runner crea una corrida activa. Es verificación
 técnica de catálogo y contrato, no una prueba humana de comprensión o ritmo.
 
+El orden curricular ya no depende del identificador de un tema. La migración
+remota `20260907130000_topic_positions.sql` preservó el orden histórico como
+base y el seed fija Fundamentos en las posiciones pulso (1), dirección (2),
+notas (3) y lectura (4). Render publicó la API `9a4c752`; la sección pública
+mostró esa secuencia en ese orden. La próxima puerta de calidad sigue siendo la
+validación humana, no más cambios de catálogo por defecto.
+
 ## Flujo de integración
 
 Para cada repositorio: trabajar en `development`, ejecutar las validaciones,
