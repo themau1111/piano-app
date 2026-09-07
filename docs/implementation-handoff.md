@@ -110,6 +110,24 @@ Las prácticas de teclado y lectura también cargaron con su prompt, rango de
 teclas y controles; no se enviaron respuestas ni se alteró progreso durante la
 comprobación.
 
+## Incremento en curso: pulso y silencio visual
+
+Se está completando el séptimo tipo de ejercicio, `rhythm_pulse`, coordinado en
+API y frontend. La actividad muestra cuatro posiciones y pide ubicar el espacio
+vacío mediante `pulsePosition`. Es deliberadamente reconocimiento visual: no
+declara ni infiere tempo, pulsación, interpretación, MIDI o micrófono. La API
+normaliza siempre cuatro pulsos, genera la posición de forma determinista,
+evalúa acierto/error y revela una explicación específica; el seed añade la
+lección «Cuatro pulsos y un silencio». Faltan las pruebas y compilaciones de
+cierre, promoción, despliegue y comprobación técnica del catálogo. La prueba
+con estudiantes y la revisión musical continúan pendientes.
+
+Validación ya completada antes de promover: la API aprobó 19 pruebas unitarias,
+compilación y 4 pruebas e2e; el frontend aprobó `npm run build` con Node
+20.19.5. React Doctor no pudo inicializar el binding temporal de `oxc-parser`
+en macOS arm64; no se cambiaron dependencias de producto por ese fallo de la
+herramienta.
+
 ## Flujo de integración
 
 Para cada repositorio: trabajar en `development`, ejecutar las validaciones,

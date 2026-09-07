@@ -37,6 +37,7 @@ const KIND_OPTIONS: Array<{ value: FormKind; label: string }> = [
   { value: "staff_note", label: "Staff Note" },
   { value: "ear_interval", label: "Ear Interval" },
   { value: "melodic_direction", label: "Melodic Direction" },
+  { value: "rhythm_pulse", label: "Rhythm Pulse" },
   { value: "scale_construction", label: "Scale Construction" },
   { value: "chord_identification", label: "Chord Identification" },
 ];
@@ -116,6 +117,13 @@ function defaultConfig(kind: FormKind): ExerciseTemplateConfig {
           allowReplay: true,
           attemptsAllowed: 4,
         },
+        mastery: { minAttempts: 6, minAccuracy: 0.8, minStreak: 2 },
+      };
+    case "rhythm_pulse":
+      return {
+        skillCode: "rhythm-pulse-1", levelIndex: 1, generator: kind,
+        constraints: { beats: 4, silencePositions: [1, 2, 3, 4] },
+        presentation: { instructions: "Observa cuatro pulsos y elige dónde está el silencio.", attemptsAllowed: 4 },
         mastery: { minAttempts: 6, minAccuracy: 0.8, minStreak: 2 },
       };
     case "scale_construction":

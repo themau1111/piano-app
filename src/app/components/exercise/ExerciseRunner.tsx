@@ -48,6 +48,7 @@ export function ExerciseRunner({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [intervalChoice, setIntervalChoice] = useState("");
   const [directionChoice, setDirectionChoice] = useState<"ascending" | "descending" | "">("");
+  const [pulseChoice, setPulseChoice] = useState<number | null>(null);
   const [chordName, setChordName] = useState("");
   const [inversion, setInversion] = useState<string>("");
 
@@ -114,6 +115,7 @@ export function ExerciseRunner({
           setSelected(new Set());
           setIntervalChoice("");
           setDirectionChoice("");
+          setPulseChoice(null);
           setChordName("");
           setInversion("");
           autoReplay(existing);
@@ -129,6 +131,7 @@ export function ExerciseRunner({
       setSelected(new Set());
       setIntervalChoice("");
       setDirectionChoice("");
+      setPulseChoice(null);
       setChordName("");
       setInversion("");
       autoReplay(started);
@@ -339,6 +342,36 @@ export function ExerciseRunner({
               </button>
             );
           })}
+        </div>
+      )}
+
+      {run.input.mode === "rhythm-options" && (
+        <div className="space-y-3">
+          <div className="flex gap-3" aria-label="Patrón de cuatro pulsos">
+            {run.input.options.map((position) => {
+              const isSilence = run.prompt.kind === "rhythm_pulse" && run.prompt.silencePosition === position;
+              return (
+                <span
+                  key={position}
+                  aria-label={isSilence ? `Pulso ${position}: silencio` : `Pulso ${position}: sonido`}
+                  className={cn(
+                    "flex h-12 w-12 items-center justify-center rounded-full border text-lg",
+                    isSilence
+                      ? "border-dashed border-white/30 text-white/45"
+                      : "border-cyan-200/40 bg-cyan-300/10 text-cyan-50",
+                  )}
+                >
+                  {isSilence ? "" : "●"}
+                </span>
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {run.input.options.map((position) => (
+              <button key={position} type="button" onClick={() => { setPulseChoice(position); submitAnswer({ pulsePosition: position }); }} disabled={working || !isRunActive} className={cn("rounded-xl border px-3 py-2 text-sm", pulseChoice === position ? "border-cyan-300 bg-cyan-300/10 text-cyan-100" : "border-white/10 bg-white/5 hover:bg-white/10")}>Pulso {position}</button>
+            ))}
+          </div>
+          <p className="text-sm text-white/65">Elige la posición del silencio. Esta actividad reconoce el patrón visual; no mide tu tempo.</p>
         </div>
       )}
 
