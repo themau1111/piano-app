@@ -100,12 +100,12 @@ añadir ejercicios/semillas compatibles para nombres de notas y lectura inicial,
 siempre coordinando ambos repositorios y evitando prometer evaluación de ritmo,
 MIDI o micrófono.
 
-La ruta ya está disponible en el código del seed, pero no se ha ejecutado en el
-catálogo remoto durante esta entrega. Tras verificar que Render publicó
-`93b7ffd`, iniciar sesión como administrador, ejecutar
-`/admin/seed/solfege-foundations` y comprobar tres temas y tres lecciones en
-la ruta pública. Registrar esa verificación como técnica, no como validación
-humana de aprendizaje.
+La ruta quedó sembrada en el catálogo remoto después de que Render publicó
+`93b7ffd`. La comprobación administrativa confirmó los temas de notas naturales
+y lectura inicial, los ejercicios `keyboard_note` y `staff_note`, y sus tres
+lecciones. En la ruta pública se verificaron los bloques y enlaces de práctica
+de «Las siete notas naturales» y «Cinco notas en clave de sol». Es una
+verificación técnica de catálogo, no una validación humana de aprendizaje.
 
 ## Flujo de integración
 
