@@ -1,6 +1,6 @@
 # Estado actual y relevo de implementación
 
-Actualizado: 5 de septiembre de 2026 (UTC).
+Actualizado: 6 de septiembre de 2026 (UTC).
 
 ## Dirección de producto confirmada
 
@@ -113,9 +113,9 @@ bloquea el trabajo técnico independiente.
 
 | Orden | Responsable | Próxima acción y evidencia de cierre |
 | --- | --- | --- |
-| 1 | Agente | Verificar por navegador el estado de lección completada al cumplir 6 intentos, 80 % de precisión y racha 2, y comprobar que persiste al recargar. Usar una sesión de prueba e identificar sus datos; no presentar intentos de QA como evidencia de aprendizaje humano. Los casos de servicio/HTTP ya están cubiertos. |
+| 1 | Agente + escucha de QA | Completar en una sesión de prueba los seis intentos con respuestas escuchadas (80 % de precisión y racha 2), comprobar el estado completado y recargar. La sesión administrativa actual tiene 2 intentos, 50 % y racha 1; no se usarán revelar ni respuestas inventadas para alcanzar el umbral. Los casos de servicio/HTTP ya están cubiertos. |
 | 2 | Agente | React Doctor sigue sin diagnóstico: con Node 18 falla por el binding opcional de `oxc-parser` y con Node 20 queda detenido durante su instalación temporal. Reintentar cuando la caché/registro de npm esté disponible, sin cambiar dependencias de producto. |
-| 3 | Agente | Implementada la invalidación de las consultas públicas de catálogo tras toda mutación administrativa, incluido el seed. Falta comprobarlo en navegador cuando el servidor local pueda iniciarse en el puerto 3000 o tras el próximo despliegue. |
+| 3 | Agente | Cerrado: en producción, ejecutar el seed de fundamentos y volver a Inicio mostró la sección sin recarga manual. |
 | 4 | Usuario u otra persona que escuche | Probar varios pares y su repetición: confirmar que se oyen ambas notas, que el orden se distingue y que el feedback coincide con la dirección escuchada. El agente prepara el recorrido y registra/corrige los hallazgos. |
 | 5 | Agente + revisión humana | Preparar la unidad principiante (pulso, altura/dirección, nombres de notas y lectura inicial), con objetivos, prerrequisitos, ejemplos y criterios. Una persona con conocimiento musical revisa antes de publicar contenido curricular nuevo. |
 | 6 | Usuario/equipo + agente | Organizar prueba con estudiantes reales. El agente prepara protocolo y criterios de éxito y documenta resultados; el equipo aporta participantes y revisión pedagógica. No declarar currículo validado antes de esta evidencia. |
@@ -154,6 +154,18 @@ según las puertas de avance de `docs/roadmap-mvps.md`.
   `topics`, `topicsBySection`, `topicExercises` y `topicLessons`, además de su
   propio catálogo, después de una mutación o seed. `npm run build` aprobó con
   Node 20.19.5; queda la comprobación visual del refresco.
+- Verificación posterior del refresco en producción: desde una sesión
+  administrativa de QA se ejecutó el seed de fundamentos y se volvió a Inicio
+  mediante la navegación interna. «Fundamentos de solfeo» siguió visible sin
+  recarga manual, con su tema, práctica y lección disponibles.
+- La misma sesión de QA comprobó la lección: la API presentó correctamente la
+  evidencia faltante (4 intentos, precisión actual 50 % frente a 80 % y racha
+  1 frente a 2). No se forzó la finalización porque requiere escuchar y
+  responder pares reales. Durante esa prueba se detectó que el tema mostraba
+  «Topic no encontrado» mientras cargaba; el frontend ahora presenta carga,
+  error recuperable o ausencia real del tema de forma diferenciada. La
+  compilación aprobó; React Doctor volvió a quedarse detenido al instalarse de
+  forma temporal y no emitió diagnóstico.
 
 ## Documentos fuente
 

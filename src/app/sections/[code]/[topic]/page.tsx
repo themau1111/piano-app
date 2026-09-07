@@ -8,7 +8,7 @@ import { fetchExercisesByTopicId, fetchLessonsByTopicId, fetchTopicsBySectionCod
 export default function TopicPage({ params }: { params: Promise<{ code: string; topic: string }> }) {
   const { code, topic: topicCode } = use(params);
 
-  const { data: topics } = useQuery({
+  const { data: topics, isLoading: topicsLoading, error: topicsError } = useQuery({
     queryKey: ["topics", code],
     queryFn: () => fetchTopicsBySectionCode(code),
   });
@@ -26,7 +26,9 @@ export default function TopicPage({ params }: { params: Promise<{ code: string; 
     queryFn: () => fetchLessonsByTopicId(topic!.id),
   });
 
-  if (!topic) return <div className="p-8 text-white/70">Topic no encontrado.</div>;
+  if (topicsLoading) return <main className="p-8 text-white/70">Cargando tema…</main>;
+  if (topicsError) return <main className="p-8 text-white/70">No pudimos cargar este tema. Inténtalo de nuevo.</main>;
+  if (!topic) return <main className="p-8 text-white/70">Tema no encontrado.</main>;
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 text-white">
