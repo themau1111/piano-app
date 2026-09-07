@@ -22,6 +22,8 @@ import { StaffPrompt } from "./StaffPrompt";
 import { writeLocalStats } from "@/lib/progress-local";
 import { useAuth } from "@/lib/auth-store";
 
+const METRONOME_TEMPO_KEY = "musicaula:metronome-tempo";
+
 function midiToLabel(midi: number) {
   return Tone.Frequency(midi, "midi").toNote();
 }
@@ -84,6 +86,17 @@ export function ExerciseRunner({
       sampler.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const storedTempo = Number(window.localStorage.getItem(METRONOME_TEMPO_KEY));
+    if (storedTempo >= 40 && storedTempo <= 120 && storedTempo % 5 === 0) {
+      setMetronomeTempo(storedTempo);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(METRONOME_TEMPO_KEY, String(metronomeTempo));
+  }, [metronomeTempo]);
 
   const playEvents = useCallback(async (events?: Array<{ midi: number; atMs: number; durationMs: number }>) => {
     if (!events?.length || !sampler.current) return;
