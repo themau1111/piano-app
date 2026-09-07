@@ -106,6 +106,9 @@ y lectura inicial, los ejercicios `keyboard_note` y `staff_note`, y sus tres
 lecciones. En la ruta pública se verificaron los bloques y enlaces de práctica
 de «Las siete notas naturales» y «Cinco notas en clave de sol». Es una
 verificación técnica de catálogo, no una validación humana de aprendizaje.
+Las prácticas de teclado y lectura también cargaron con su prompt, rango de
+teclas y controles; no se enviaron respuestas ni se alteró progreso durante la
+comprobación.
 
 ## Flujo de integración
 
