@@ -1,6 +1,6 @@
 # Estado actual y relevo de implementación
 
-Actualizado: 6 de septiembre de 2026 (UTC).
+Actualizado: 7 de septiembre de 2026 (UTC).
 
 ## Dirección de producto confirmada
 
@@ -117,7 +117,7 @@ bloquea el trabajo técnico independiente.
 | 2 | Agente | React Doctor sigue sin diagnóstico: con Node 18 falla por el binding opcional de `oxc-parser` y con Node 20 queda detenido durante su instalación temporal. Reintentar cuando la caché/registro de npm esté disponible, sin cambiar dependencias de producto. |
 | 3 | Agente | Cerrado: en producción, ejecutar el seed de fundamentos y volver a Inicio mostró la sección sin recarga manual. |
 | 4 | Usuario u otra persona que escuche | Probar varios pares y su repetición: confirmar que se oyen ambas notas, que el orden se distingue y que el feedback coincide con la dirección escuchada. El agente prepara el recorrido y registra/corrige los hallazgos. |
-| 5 | Agente + revisión humana | Preparar la unidad principiante (pulso, altura/dirección, nombres de notas y lectura inicial), con objetivos, prerrequisitos, ejemplos y criterios. Una persona con conocimiento musical revisa antes de publicar contenido curricular nuevo. |
+| 5 | Agente + revisión humana | Borrador preparado en [`mvp1-unit-draft.md`](mvp1-unit-draft.md): pulso, altura/dirección, nombres de notas y lectura inicial, con objetivos, prerrequisitos, evidencia y límites. Espera revisión musical antes de publicar contenido curricular nuevo. |
 | 6 | Usuario/equipo + agente | Organizar prueba con estudiantes reales. El agente prepara protocolo y criterios de éxito y documenta resultados; el equipo aporta participantes y revisión pedagógica. No declarar currículo validado antes de esta evidencia. |
 
 Después de cerrar y validar la primera unidad, el agente continúa con feedback
@@ -166,6 +166,10 @@ según las puertas de avance de `docs/roadmap-mvps.md`.
   error recuperable o ausencia real del tema de forma diferenciada. La
   compilación aprobó; React Doctor volvió a quedarse detenido al instalarse de
   forma temporal y no emitió diagnóstico.
+- Se preparó el borrador de la primera unidad y un protocolo de QA para la
+  finalización de dirección melódica en
+  [`mvp1-unit-draft.md`](mvp1-unit-draft.md). Es material de revisión, no
+  contenido publicado ni evidencia de validación humana.
 
 ## Documentos fuente
 
