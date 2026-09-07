@@ -131,6 +131,11 @@ las etiquetas; el cliente sólo las presenta. Aún faltan feedback estructurado
 para todo el catálogo, semántica documentada de cada etiqueta y una validación
 de comprensión con personas.
 
+El ejercicio publicado de dirección melódica también muestra un paso siguiente
+tras una respuesta incorrecta: repetir el par y comparar la altura del segundo
+sonido con la del primero. No aparece al revelar la solución y no modifica la
+evaluación ni el progreso.
+
 ## Pruebas del navegador integrado — 5 de septiembre (UTC)
 
 - Producción, sesión administrativa real: seed de fundamentos ejecutado;
