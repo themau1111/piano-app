@@ -50,6 +50,9 @@ export function ExerciseRunner({
   const [directionChoice, setDirectionChoice] = useState<"ascending" | "descending" | "">("");
   const [pulseChoice, setPulseChoice] = useState<number | null>(null);
   const [beatCountChoice, setBeatCountChoice] = useState<number | null>(null);
+  const [metronomeRunning, setMetronomeRunning] = useState(false);
+  const [metronomeTempo, setMetronomeTempo] = useState(60);
+  const [metronomeBeat, setMetronomeBeat] = useState(1);
   const [chordName, setChordName] = useState("");
   const [inversion, setInversion] = useState<string>("");
 
@@ -155,6 +158,20 @@ export function ExerciseRunner({
       localStorage.setItem(storageKey, run.runId);
     }
   }, [run, storageKey]);
+
+  const hasRhythmPrompt = run?.prompt.kind === "rhythm_pulse" || run?.prompt.kind === "rhythm_count";
+
+  useEffect(() => {
+    if (!metronomeRunning || !hasRhythmPrompt) return;
+    const interval = window.setInterval(() => {
+      setMetronomeBeat((beat) => (beat % 4) + 1);
+    }, 60_000 / metronomeTempo);
+    return () => window.clearInterval(interval);
+  }, [hasRhythmPrompt, metronomeRunning, metronomeTempo]);
+
+  useEffect(() => {
+    if (!hasRhythmPrompt) setMetronomeRunning(false);
+  }, [hasRhythmPrompt]);
 
   async function refreshRun(nextRunId?: string) {
     const latest = nextRunId ? await getExerciseRun(nextRunId) : run ? await getExerciseRun(run.runId) : null;
@@ -298,6 +315,54 @@ export function ExerciseRunner({
           </div>
         )}
       </div>
+
+      {hasRhythmPrompt && (
+        <aside className="space-y-3 rounded-2xl border border-cyan-200/20 bg-cyan-300/5 p-4" aria-label="Metrónomo visual opcional">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-medium text-cyan-50">Metrónomo visual</p>
+              <p className="text-sm text-white/65">Úsalo para acompañar la lectura. No evalúa tu tempo ni tu interpretación.</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setMetronomeBeat(1);
+                setMetronomeRunning((running) => !running);
+              }}
+              aria-pressed={metronomeRunning}
+            >
+              {metronomeRunning ? "Detener pulso" : "Iniciar pulso"}
+            </Button>
+          </div>
+          <label className="flex items-center gap-3 text-sm text-white/75">
+            <span>Tempo: {metronomeTempo} bpm</span>
+            <input
+              type="range"
+              min="40"
+              max="120"
+              step="5"
+              value={metronomeTempo}
+              onChange={(event) => setMetronomeTempo(Number(event.target.value))}
+              className="accent-cyan-300"
+              aria-label="Tempo del metrónomo visual"
+            />
+          </label>
+          <div className="flex gap-2" aria-label={`Pulso visual: tiempo ${metronomeBeat} de 4`}>
+            {[1, 2, 3, 4].map((beat) => (
+              <span
+                key={beat}
+                className={cn(
+                  "h-4 w-4 rounded-full border transition-colors",
+                  metronomeRunning && metronomeBeat === beat
+                    ? "border-cyan-100 bg-cyan-200 shadow-[0_0_14px_rgba(103,232,249,0.9)]"
+                    : "border-cyan-100/30 bg-white/10",
+                )}
+              />
+            ))}
+          </div>
+        </aside>
+      )}
 
       {run.input.mode === "interval-options" && (
         <div className="grid gap-2 sm:grid-cols-3">
