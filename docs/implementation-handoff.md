@@ -6,9 +6,9 @@
 
 ## Estado confirmado
 
-El frontend está en `development` para promover esta entrega. El repositorio
-API hermano publicó el contrato en `development → main` con el commit
-`b635a4d`.
+El frontend publicó el consumo del contrato mediante `development → main` con
+el commit `d84bf10`. El repositorio API hermano publicó su contrato mediante el
+mismo flujo con `b635a4d`.
 
 Cambios frontend publicados recientemente:
 
@@ -61,7 +61,7 @@ reglas propias ni mostrar etiquetas internas.
   `src/app/components/exercise/ExerciseRunner.tsx` muestra un paso siguiente
   sólo para errores de dirección melódica.
 
-### Cambio entregado en API; promoción del frontend pendiente
+### Cambio entregado
 
 1. API: `PracticeQueueItem.explanation` se calcula exclusivamente en
    `src/progress/progress.service.ts`. Para una cola `due`, la recuperación por
@@ -75,8 +75,7 @@ reglas propias ni mostrar etiquetas internas.
    `pnpm run test:e2e` (3); frontend `npm run build` con Node 20.19.5.
    React Doctor no pudo iniciar por la falta del binding opcional de
    `oxc-parser` en su instalación temporal.
-5. Pendiente: integrar el frontend validado primero en `development` y luego
-   promoverlo a `main`.
+5. Frontend validado, integrado y promovido con `d84bf10`.
 
 No modificar reglas de dominio de corridas existentes ni datos históricos. La
 evolución de campos debe ser opcional y compatible con runs ya persistidos.

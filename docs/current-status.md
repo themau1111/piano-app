@@ -149,8 +149,8 @@ Contrato técnico publicado:
   opcional `@oxc-parser/binding-darwin-arm64`. Es un problema de su instalación
   temporal; la compilación y comprobación de tipos sí aprobaron.
 - API: commit `b635a4d` (`feat: explain practice recommendations`) integrado y
-  subido mediante `development → main`. El frontend se promueve con el consumo
-  compatible en la misma entrega.
+  subido mediante `development → main`. El frontend `d84bf10` (`feat: consume
+  practice feedback contract`) se integró y subió por el mismo flujo.
 
 ## Pruebas del navegador integrado — 5 de septiembre (UTC)
 
