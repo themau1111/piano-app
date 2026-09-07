@@ -130,7 +130,7 @@ function defaultConfig(kind: FormKind): ExerciseTemplateConfig {
     case "rhythm_count":
       return {
         skillCode: "rhythm-count-1", levelIndex: 1, generator: kind,
-        constraints: { patterns: [["quarter", "quarter", "quarter", "quarter"], ["half", "half"], ["quarter", "rest-quarter", "quarter", "quarter"]] },
+        constraints: { patterns: [["quarter", "quarter", "quarter", "quarter"], ["half", "half"], ["whole"], ["half", "quarter", "rest-quarter"], ["quarter", "rest-quarter", "quarter", "quarter"]] },
         presentation: { instructions: "Cuenta cuánto dura cada figura y silencio antes de elegir.", attemptsAllowed: 4 },
         mastery: { minAttempts: 6, minAccuracy: 0.8, minStreak: 2 },
       };
