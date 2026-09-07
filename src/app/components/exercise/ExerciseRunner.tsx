@@ -53,6 +53,7 @@ export function ExerciseRunner({
   const [metronomeRunning, setMetronomeRunning] = useState(false);
   const [metronomeTempo, setMetronomeTempo] = useState(60);
   const [metronomeBeat, setMetronomeBeat] = useState(1);
+  const [showRhythmGuide, setShowRhythmGuide] = useState(false);
   const [chordName, setChordName] = useState("");
   const [inversion, setInversion] = useState<string>("");
 
@@ -121,6 +122,7 @@ export function ExerciseRunner({
           setDirectionChoice("");
           setPulseChoice(null);
           setBeatCountChoice(null);
+          setShowRhythmGuide(false);
           setChordName("");
           setInversion("");
           autoReplay(existing);
@@ -138,6 +140,7 @@ export function ExerciseRunner({
       setDirectionChoice("");
       setPulseChoice(null);
       setBeatCountChoice(null);
+      setShowRhythmGuide(false);
       setChordName("");
       setInversion("");
       autoReplay(started);
@@ -452,6 +455,27 @@ export function ExerciseRunner({
               return <span key={`${symbol}-${index}`} aria-label={label} className="flex h-14 min-w-12 items-center justify-center rounded-xl border border-cyan-200/40 bg-cyan-300/10 px-3 text-3xl text-cyan-50">{glyph}</span>;
             })}
           </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setShowRhythmGuide((shown) => !shown)}
+            aria-expanded={showRhythmGuide}
+          >
+            {showRhythmGuide ? "Ocultar guía de conteo" : "Ver guía de conteo"}
+          </Button>
+          {showRhythmGuide && (
+            <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-white/75">
+              <p>Cuenta una figura a la vez y suma al final:</p>
+              <ol className="mt-2 flex flex-wrap gap-2" aria-label="Guía de duración por figura">
+                {run.prompt.symbols.map((symbol, index) => {
+                  const beats = symbol === "half" ? 2 : symbol === "whole" ? 4 : 1;
+                  const name = symbol === "half" ? "Blanca" : symbol === "whole" ? "Redonda" : symbol === "rest-quarter" ? "Silencio de negra" : "Negra";
+                  return <li key={`guide-${symbol}-${index}`} className="rounded-lg bg-white/10 px-2 py-1">{name}: {beats} {beats === 1 ? "pulso" : "pulsos"}</li>;
+                })}
+              </ol>
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-2">
             {run.input.options.map((count) => <button key={count} type="button" onClick={() => { setBeatCountChoice(count); submitAnswer({ beatCount: count }); }} disabled={working || !isRunActive} className={cn("rounded-xl border px-3 py-2 text-sm", beatCountChoice === count ? "border-cyan-300 bg-cyan-300/10 text-cyan-100" : "border-white/10 bg-white/5 hover:bg-white/10")}>{count} pulsos</button>)}
           </div>
