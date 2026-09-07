@@ -16,6 +16,9 @@ tras error en los seis tipos de ejercicio y `4c0b0f4` para exponer
 que presenta los estados Practicado, En progreso y Dominado en la portada.
 La API publicó además `ba848f3`, que cubre mediante HTTP autenticado simulado
 los campos `learningState` y `explanation` para evitar regresiones de contrato.
+La ruta inicial completa quedó publicada en API como `93b7ffd`: el seed
+idempotente prepara dirección melódica, notas naturales en teclado y cinco
+notas en clave de sol. Sus 18 pruebas unitarias, 4 e2e y compilación aprobaron.
 
 Cambios frontend publicados recientemente:
 
@@ -96,6 +99,13 @@ un borrador y sólo se puede activar o ampliar como currículo tras revisión mu
 añadir ejercicios/semillas compatibles para nombres de notas y lectura inicial,
 siempre coordinando ambos repositorios y evitando prometer evaluación de ritmo,
 MIDI o micrófono.
+
+La ruta ya está disponible en el código del seed, pero no se ha ejecutado en el
+catálogo remoto durante esta entrega. Tras verificar que Render publicó
+`93b7ffd`, iniciar sesión como administrador, ejecutar
+`/admin/seed/solfege-foundations` y comprobar tres temas y tres lecciones en
+la ruta pública. Registrar esa verificación como técnica, no como validación
+humana de aprendizaje.
 
 ## Flujo de integración
 
