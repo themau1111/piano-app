@@ -124,6 +124,13 @@ Después de cerrar y validar la primera unidad, el agente continúa con feedback
 por error y repaso explicable usando `weakTags`, precisión y fecha de práctica,
 según las puertas de avance de `docs/roadmap-mvps.md`.
 
+La primera parte visible de ese repaso ya está implementada: la cola de la
+portada explica si una práctica es nueva, continúa la habilidad actual, repasa
+una dificultad detectada o toca retomarse. La API conserva la razón canónica y
+las etiquetas; el cliente sólo las presenta. Aún faltan feedback estructurado
+para todo el catálogo, semántica documentada de cada etiqueta y una validación
+de comprensión con personas.
+
 ## Pruebas del navegador integrado — 5 de septiembre (UTC)
 
 - Producción, sesión administrativa real: seed de fundamentos ejecutado;

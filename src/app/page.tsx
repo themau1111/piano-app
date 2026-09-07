@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { fetchSections, getMyProgress, getPracticeQueue } from "@/lib/api/api";
+import type { PracticeQueueItem } from "@/lib/exercises/contracts";
 import { useCurrentUser } from "./hooks/useCurrentUser";
 import { Card } from "./components/ui/Card";
 import { HomeHeroPiano } from "./components/home/HomeHeroPiano";
@@ -107,9 +108,8 @@ export default function HomePage() {
                         <div>
                           <p className="text-xs uppercase tracking-[0.2em] text-cyan-300/70">{item.reason}</p>
                           <h3 className="mt-1 font-medium">{item.title}</h3>
-                          <p className="mt-1 text-sm text-white/60">
-                            {item.topicTitle} · nivel {item.levelIndex}
-                          </p>
+                          <p className="mt-1 text-sm text-white/60">{item.topicTitle} · nivel {item.levelIndex}</p>
+                          <p className="mt-2 text-sm leading-5 text-cyan-50/80">{practiceReason(item)}</p>
                         </div>
                         <div className="text-right text-xs text-white/60">
                           <div>Intentos: {item.stats?.attempts ?? 0}</div>
@@ -148,6 +148,22 @@ export default function HomePage() {
       </div>
     </main>
   );
+}
+
+function practiceReason(item: PracticeQueueItem) {
+  if (item.reason === "new") {
+    return "Es una actividad nueva de tu tema actual.";
+  }
+
+  if (item.reason === "current") {
+    return "La proponemos para continuar practicando esta habilidad.";
+  }
+
+  if (item.stats?.weakTags.length) {
+    return "La proponemos para repasar una dificultad detectada en intentos anteriores.";
+  }
+
+  return "La proponemos porque ya toca retomar esta práctica.";
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
