@@ -189,5 +189,7 @@ evaluación ni el progreso.
   trabajo.
 - `docs/roadmap-mvps.md`: alcance y puertas de validación por MVP.
 - Este archivo: estado operativo compacto y siguiente relevo.
+- `docs/implementation-handoff.md`: relevo técnico detallado para retomar tras
+  una compactación de contexto.
 - `../piano-app-api/AGENTS.md` y `../piano-app-api/README.md`: contrato de la
   API, esquema y estado de las migraciones.
