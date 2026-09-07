@@ -194,6 +194,7 @@ export type RunFeedback = {
   status: RunStatus;
   correct: boolean;
   message: string;
+  nextStep?: string;
   weakTags: string[];
   answerSummary?: Record<string, unknown>;
   reveal?: {
@@ -335,6 +336,7 @@ export type PracticeQueueItem = {
   topicCode: string;
   topicTitle: string;
   reason: "due" | "current" | "new";
+  explanation?: string;
   stats: ProgressStats | null;
 };
 

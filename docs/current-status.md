@@ -125,16 +125,32 @@ por error y repaso explicable usando `weakTags`, precisión y fecha de práctica
 según las puertas de avance de `docs/roadmap-mvps.md`.
 
 La primera parte visible de ese repaso ya está implementada: la cola de la
-portada explica si una práctica es nueva, continúa la habilidad actual, repasa
-una dificultad detectada o toca retomarse. La API conserva la razón canónica y
-las etiquetas; el cliente sólo las presenta. Aún faltan feedback estructurado
-para todo el catálogo, semántica documentada de cada etiqueta y una validación
-de comprensión con personas.
+portada consume `explanation`, calculada por la API para actividad nueva,
+habilidad actual, recuperación tras precisión baja o repaso programado. El
+cliente conserva un fallback temporal para una API aún no actualizada y no
+interpreta etiquetas internas. Aún faltan feedback estructurado para todo el
+catálogo, semántica documentada de cada etiqueta y una validación de
+comprensión con personas.
 
-El ejercicio publicado de dirección melódica también muestra un paso siguiente
-tras una respuesta incorrecta: repetir el par y comparar la altura del segundo
-sonido con la del primero. No aparece al revelar la solución y no modifica la
-evaluación ni el progreso.
+El ejercicio publicado de dirección melódica también recibe `nextStep` desde
+la API tras una respuesta incorrecta: repetir el par y comparar la altura del
+segundo sonido con la del primero. No aparece al revelar la solución y no
+modifica la evaluación ni el progreso; el cliente mantiene un fallback durante
+la promoción coordinada.
+
+Contrato técnico publicado:
+
+- API: `pnpm run test` aprobó 17 pruebas, `pnpm run build` aprobó y `pnpm run
+  test:e2e` aprobó 3 pruebas. Se cubren explicación de actividad nueva, actual,
+  recuperación por precisión baja y repaso programado, además de `nextStep`
+  para dirección melódica correcta, errónea y revelada.
+- Frontend: `npm run build` aprobó con Node 20.19.5.
+- React Doctor no pudo analizar el proyecto: `npx` no instaló el binding
+  opcional `@oxc-parser/binding-darwin-arm64`. Es un problema de su instalación
+  temporal; la compilación y comprobación de tipos sí aprobaron.
+- API: commit `b635a4d` (`feat: explain practice recommendations`) integrado y
+  subido mediante `development → main`. El frontend se promueve con el consumo
+  compatible en la misma entrega.
 
 ## Pruebas del navegador integrado — 5 de septiembre (UTC)
 

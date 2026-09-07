@@ -6,11 +6,9 @@
 
 ## Estado confirmado
 
-El frontend está limpio en `main` y publicado hasta el commit `ef554df`.
-El repositorio API hermano está limpio en `development` y su último commit es
-`a15d9bc`. La persona usuaria autorizó explícitamente continuar el trabajo en
-la API; el entorno de esta sesión todavía no tiene permiso de escritura para
-`../piano-app-api`, por lo que ese acceso debe habilitarse antes de editar.
+El frontend está en `development` para promover esta entrega. El repositorio
+API hermano publicó el contrato en `development → main` con el commit
+`b635a4d`.
 
 Cambios frontend publicados recientemente:
 
@@ -63,26 +61,22 @@ reglas propias ni mostrar etiquetas internas.
   `src/app/components/exercise/ExerciseRunner.tsx` muestra un paso siguiente
   sólo para errores de dirección melódica.
 
-### Cambio propuesto, aún no implementado
+### Cambio entregado en API; promoción del frontend pendiente
 
-1. En API, añadir a `PracticeQueueItem` un campo estable `explanation` y, si
-   hace falta, un código de razón más específico. Por ejemplo:
-   `review_due`, `review_after_error`, `continue_current` y `start_new`.
-   No exponer ni requerir que el cliente interprete `weakTags`.
-2. Construir `explanation` exclusivamente en
-   `src/progress/progress.service.ts`, a partir de las reglas ya canónicas. El
-   texto debe decir la acción siguiente, no afirmar dominio.
-3. Añadir a `RunFeedback` un `nextStep` opcional generado por
-   `src/exercises/engine.ts`. Empezar por `melodic_direction`; ampliar otros
-   tipos sólo cuando el feedback haya sido revisado.
-4. Sincronizar el contrato equivalente del frontend y consumir los campos
-   enviados por API. Mantener un fallback para respuestas de servidores aún no
-   actualizados durante la promoción coordinada.
-5. Añadir pruebas unitarias de API para cada razón de cola, fecha vencida,
-   precisión baja, actividad actual y nueva; añadir pruebas del motor para
-   `nextStep` correcto, incorrecto y revelado. Ejecutar `pnpm test`,
-   `pnpm test:e2e` y `pnpm run build` en API. Ejecutar `npm run build` en
-   frontend.
+1. API: `PracticeQueueItem.explanation` se calcula exclusivamente en
+   `src/progress/progress.service.ts`. Para una cola `due`, la recuperación por
+   precisión baja tiene prioridad sobre la fecha vencida; no se envían
+   `weakTags` como explicación.
+2. API: `RunFeedback.nextStep` es opcional y se genera sólo para un error de
+   `melodic_direction`; no aparece tras un acierto o revelar.
+3. Frontend: sus contratos aceptan ambos campos y los presentan. Conservan un
+   fallback temporal frente a una API sin actualizar.
+4. API validada y promovida: `pnpm run test` (17), `pnpm run build` y
+   `pnpm run test:e2e` (3); frontend `npm run build` con Node 20.19.5.
+   React Doctor no pudo iniciar por la falta del binding opcional de
+   `oxc-parser` en su instalación temporal.
+5. Pendiente: integrar el frontend validado primero en `development` y luego
+   promoverlo a `main`.
 
 No modificar reglas de dominio de corridas existentes ni datos históricos. La
 evolución de campos debe ser opcional y compatible con runs ya persistidos.

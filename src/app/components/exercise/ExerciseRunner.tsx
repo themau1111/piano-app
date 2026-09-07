@@ -242,11 +242,12 @@ export function ExerciseRunner({
 
   const selectedLabels = normalizeSelection(selected).map(midiToLabel);
   const revealLabel = run?.feedback?.reveal?.label;
-  const nextStep =
-    run?.feedback &&
-    !run.feedback.correct &&
-    !run.feedback.reveal &&
-    run.exercise.kind === "melodic_direction"
+  const nextStep = run?.feedback?.nextStep
+    ? `Paso siguiente: ${run.feedback.nextStep}`
+    : run?.feedback &&
+        !run.feedback.correct &&
+        !run.feedback.reveal &&
+        run.exercise.kind === "melodic_direction"
       ? "Paso siguiente: reproduce el par y compara sólo la altura del segundo sonido con la del primero."
       : null;
 

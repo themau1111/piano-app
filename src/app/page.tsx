@@ -151,6 +151,10 @@ export default function HomePage() {
 }
 
 function practiceReason(item: PracticeQueueItem) {
+  if (item.explanation) {
+    return item.explanation;
+  }
+
   if (item.reason === "new") {
     return "Es una actividad nueva de tu tema actual.";
   }
