@@ -4,6 +4,7 @@ export type ExerciseKind =
   | "ear_interval"
   | "melodic_direction"
   | "rhythm_pulse"
+  | "rhythm_count"
   | "scale_construction"
   | "chord_identification";
 
@@ -40,6 +41,7 @@ export type ExerciseTemplateConfig =
       mastery: MasteryRule;
     }
   | { skillCode: string; levelIndex: number; generator: "rhythm_pulse"; constraints: { beats: 4; silencePositions: number[] }; presentation: TemplatePresentation; mastery: MasteryRule }
+  | { skillCode: string; levelIndex: number; generator: "rhythm_count"; constraints: { patterns: string[][] }; presentation: TemplatePresentation; mastery: MasteryRule }
   | {
       skillCode: string;
       levelIndex: number;
@@ -142,6 +144,7 @@ export type ExercisePrompt =
       options: Array<"ascending" | "descending">;
     }
   | { kind: "rhythm_pulse"; text: string; beats: number; options: number[]; silencePosition: number }
+  | { kind: "rhythm_count"; text: string; symbols: string[]; options: number[] }
   | {
       kind: "scale_construction";
       text: string;
@@ -176,6 +179,7 @@ export type ExerciseInputSpec =
       options: Array<"ascending" | "descending">;
     }
   | { mode: "rhythm-options"; options: number[] }
+  | { mode: "rhythm-count-options"; options: number[] }
   | {
       mode: "chord-builder";
       minSelections: number;
@@ -234,6 +238,7 @@ export type ExerciseAttemptAnswer = {
   interval?: string;
   direction?: "ascending" | "descending";
   pulsePosition?: number;
+  beatCount?: number;
   chordName?: string;
   inversion?: number | null;
 };

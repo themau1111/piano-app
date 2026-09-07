@@ -143,6 +143,14 @@ notas (3) y lectura (4). Render publicó la API `9a4c752`; la sección pública
 mostró esa secuencia en ese orden. La próxima puerta de calidad sigue siendo la
 validación humana, no más cambios de catálogo por defecto.
 
+El incremento siguiente, aún sin publicar, añade `rhythm_count`: una lectura
+visual de negras, blancas, redondas y silencios de negra donde la respuesta es
+la suma de pulsos escritos. No evalúa tempo ni interpretación. El seed prepara
+el quinto tema «Primera lectura rítmica» y la lección «Cuenta figuras y
+silencios». API aprobó 20 unitarias, compilación y 4 e2e; frontend aprobó
+`npm run build` con Node 20.19.5. Falta promover, desplegar, sembrar y verificar
+el catálogo sin enviar respuestas.
+
 ## Flujo de integración
 
 Para cada repositorio: trabajar en `development`, ejecutar las validaciones,

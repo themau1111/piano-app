@@ -49,6 +49,7 @@ export function ExerciseRunner({
   const [intervalChoice, setIntervalChoice] = useState("");
   const [directionChoice, setDirectionChoice] = useState<"ascending" | "descending" | "">("");
   const [pulseChoice, setPulseChoice] = useState<number | null>(null);
+  const [beatCountChoice, setBeatCountChoice] = useState<number | null>(null);
   const [chordName, setChordName] = useState("");
   const [inversion, setInversion] = useState<string>("");
 
@@ -116,6 +117,7 @@ export function ExerciseRunner({
           setIntervalChoice("");
           setDirectionChoice("");
           setPulseChoice(null);
+          setBeatCountChoice(null);
           setChordName("");
           setInversion("");
           autoReplay(existing);
@@ -132,6 +134,7 @@ export function ExerciseRunner({
       setIntervalChoice("");
       setDirectionChoice("");
       setPulseChoice(null);
+      setBeatCountChoice(null);
       setChordName("");
       setInversion("");
       autoReplay(started);
@@ -372,6 +375,22 @@ export function ExerciseRunner({
             ))}
           </div>
           <p className="text-sm text-white/65">Elige la posición del silencio. Esta actividad reconoce el patrón visual; no mide tu tempo.</p>
+        </div>
+      )}
+
+      {run.input.mode === "rhythm-count-options" && run.prompt.kind === "rhythm_count" && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-3" aria-label="Patrón rítmico escrito">
+            {run.prompt.symbols.map((symbol, index) => {
+              const label = symbol === "half" ? "blanca, dos pulsos" : symbol === "whole" ? "redonda, cuatro pulsos" : symbol === "rest-quarter" ? "silencio de negra, un pulso" : "negra, un pulso";
+              const glyph = symbol === "half" ? "𝅗𝅥" : symbol === "whole" ? "𝅝" : symbol === "rest-quarter" ? "𝄽" : "♩";
+              return <span key={`${symbol}-${index}`} aria-label={label} className="flex h-14 min-w-12 items-center justify-center rounded-xl border border-cyan-200/40 bg-cyan-300/10 px-3 text-3xl text-cyan-50">{glyph}</span>;
+            })}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {run.input.options.map((count) => <button key={count} type="button" onClick={() => { setBeatCountChoice(count); submitAnswer({ beatCount: count }); }} disabled={working || !isRunActive} className={cn("rounded-xl border px-3 py-2 text-sm", beatCountChoice === count ? "border-cyan-300 bg-cyan-300/10 text-cyan-100" : "border-white/10 bg-white/5 hover:bg-white/10")}>{count} pulsos</button>)}
+          </div>
+          <p className="text-sm text-white/65">Reconoce la duración escrita. Esta actividad no mide tempo ni cómo la interpretas.</p>
         </div>
       )}
 
