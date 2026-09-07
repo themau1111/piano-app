@@ -151,6 +151,13 @@ silencios». API aprobó 20 unitarias, compilación y 4 e2e; frontend aprobó
 `npm run build` con Node 20.19.5. Falta promover, desplegar, sembrar y verificar
 el catálogo sin enviar respuestas.
 
+La promoción quedó publicada como API `ddeee3f` y frontend `e53aea7`. Tras
+ejecutar el seed desde administración, el catálogo público confirmó el tema
+«Primera lectura rítmica» (28, posición 5), la práctica `rhythm_count` (14) y
+la lección (15). Una corrida de invitado mostró `half + half` con opciones 3,
+4 y 5, sin audio ni respuesta enviada. Es validación técnica del flujo; faltan
+las pruebas humanas de comprensión, accesibilidad y umbrales de dominio.
+
 ## Flujo de integración
 
 Para cada repositorio: trabajar en `development`, ejecutar las validaciones,
