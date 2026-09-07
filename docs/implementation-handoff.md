@@ -14,6 +14,8 @@ Después de ese relevo, la API publicó `6723e59` para entregar un `nextStep`
 tras error en los seis tipos de ejercicio y `4c0b0f4` para exponer
 `learningState` en cada elemento de progreso. El frontend publicó `b6e2f91`,
 que presenta los estados Practicado, En progreso y Dominado en la portada.
+La API publicó además `ba848f3`, que cubre mediante HTTP autenticado simulado
+los campos `learningState` y `explanation` para evitar regresiones de contrato.
 
 Cambios frontend publicados recientemente:
 
@@ -87,9 +89,9 @@ evolución de campos debe ser opcional y compatible con runs ya persistidos.
 
 ## Siguiente límite de producto
 
-El núcleo técnico de MVP 2 ya ofrece feedback accionable, cola explicable y
-progreso por habilidad. La primera unidad sigue siendo un borrador y sólo se
-puede activar o ampliar como currículo tras revisión musical:
+El núcleo técnico de MVP 2 ya ofrece feedback accionable, cola explicable,
+progreso por habilidad y pruebas de contrato. La primera unidad sigue siendo
+un borrador y sólo se puede activar o ampliar como currículo tras revisión musical:
 [`mvp1-unit-draft.md`](mvp1-unit-draft.md). El siguiente grupo técnico es
 añadir ejercicios/semillas compatibles para nombres de notas y lectura inicial,
 siempre coordinando ambos repositorios y evitando prometer evaluación de ritmo,
