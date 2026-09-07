@@ -243,6 +243,7 @@ export type Section = {
   code: string;
   title: string;
   description?: string;
+  position: number;
 };
 
 export type Topic = {

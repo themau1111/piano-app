@@ -29,7 +29,7 @@ async function authFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export type SectionUpsertDto = { code: string; title: string; description?: string };
-export type TopicUpsertDto = { section_id: number; code: string; title: string; description?: string };
+export type TopicUpsertDto = { section_id: number; code: string; title: string; description?: string; position?: number };
 export type ExerciseUpsertDto = {
   section_id: number;
   topic_id?: number | null;
