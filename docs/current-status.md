@@ -2,6 +2,112 @@
 
 Actualizado: 7 de septiembre de 2026 (UTC).
 
+## Objetivo activo — recuperación breve para cerrar la ruta inicial
+
+La ruta inicial de solfeo ya puede comprobarse de punta a punta: pulso,
+dirección melódica, notas naturales, lectura inicial y lectura rítmica están
+publicados, sembrados y ordenados. El siguiente incremento técnico es una
+recuperación breve que reúna escucha y lectura mediante ejercicios existentes,
+sin medir tempo, ejecución, MIDI ni audio.
+
+Implementación publicada: `rhythm_count` presenta negras, blancas,
+redondas y silencios de negra, y pide sumar los pulsos escritos. Añade el quinto
+tema y la lección «Cuenta figuras y silencios» al seed. API `ddeee3f` y
+frontend `e53aea7` están en GitHub; la API pública de Render respondió salud.
+API aprobó 20 pruebas unitarias, compilación y 4 e2e; frontend aprobó
+compilación con Node 20.19.5. Durante la publicación, la sesión de
+automatización del navegador se reinició y el canal administrativo local no
+tenía clave; el endpoint rechazó correctamente una llamada sin credencial con
+401, sin alterar contenido.
+
+El seed se ejecutó posteriormente desde administración. La API pública confirmó
+el tema 28 en posición 5, la práctica `rhythm_count` 14 y la lección 15. Una
+corrida de invitado cargó el patrón `half + half`, opciones 3/4/5 e instrucciones
+sin audio; no se envió respuesta ni se alteró progreso.
+
+Implementación publicada: el seed añade «Repaso: escucha y lectura»
+en posición 6, con una práctica de dirección y otra de lectura de nota en clave
+de sol dentro de la misma lección. API aprobó 20 pruebas unitarias, compilación
+y 4 e2e; no altera contratos ni agrega evaluación de interpretación.
+
+El seed final confirmó el tema 39 en posición 6, dos prácticas (dirección
+melódica y lectura en clave de sol) y la lección 24. Sus cuatro bloques fueron
+consultados por API pública en orden: explicación, escucha, lectura y recap.
+No se enviaron respuestas ni se alteró progreso durante la verificación.
+
+Implementación pendiente de publicar: el detalle de lección resuelve el
+siguiente enlace entre temas y la interfaz lo presenta. El seed ajusta la
+cadena completa pulso → dirección → notas → lectura → ritmo → repaso. API
+aprobó 20 pruebas unitarias, compilación y 4 e2e.
+
+Avances confirmados desde el último relevo:
+
+- La API publicada `93b7ffd` añadió al seed idempotente dos temas, dos
+  ejercicios y dos lecciones: «Las siete notas naturales» y «Cinco notas en
+  clave de sol». Render confirmó ese despliegue y el seed se ejecutó desde
+  administración.
+- Producción muestra los temas, sus lecciones y prácticas. Se comprobó la
+  carga de ambos runners sin enviar respuestas ni modificar progreso.
+- El núcleo técnico de práctica ya incluye feedback accionable para los seis
+  tipos existentes, cola explicable, estados por habilidad y pruebas de
+  contrato HTTP.
+
+Implementación de `rhythm_pulse`, publicada y pendiente de siembra remota:
+
+- API: tipo, normalización, generación determinista de un silencio en cuatro
+  pulsos, evaluación por `pulsePosition`, revelación explícita y seed
+  idempotente con la lección «Cuatro pulsos y un silencio» publicados como
+  `f96cf04`.
+- Frontend: contratos, botones de respuesta, patrón con posición vacía y
+  formulario administrativo publicados como `2727738`.
+- Validación técnica: API aprobó 19 pruebas unitarias, compilación y 4 pruebas
+  e2e; frontend aprobó `npm run build` con Node 20.19.5. React Doctor no pudo
+  inicializar su binding temporal de `oxc-parser` en macOS arm64; no se cambió
+  ninguna dependencia de producto para ese problema externo.
+
+Decisiones y límites:
+
+- No se afirmará precisión temporal: la actividad sólo identifica un silencio
+  que ya está representado visualmente.
+- No se usan micrófono, MIDI ni respuestas inventadas para completar progreso.
+- Las pruebas humanas de escucha, comprensión y umbrales siguen pendientes y
+  se registrarán al final; lo completado hasta ahora es validación técnica.
+- Render confirmó `f96cf04` como despliegue activo. La nueva sesión de
+  automatización recuperó finalmente la pestaña administrativa autenticada:
+  el seed idempotente se ejecutó sin error y creó el tema 20, ejercicio 13 y
+  lección 7 de pulso y silencio. La ruta pública y el runner cargaron; se
+  inspeccionó el patrón y sus controles sin enviar ninguna respuesta.
+- La migración remota `20260907130000_topic_positions.sql` añadió una posición
+  curricular persistida. Conservó el orden previo para los demás temas y dejó
+  Fundamentos como pulso (1), dirección (2), notas (3) y lectura (4). Render
+  publicó la API `9a4c752` y la sección pública confirmó esa misma secuencia.
+
+Próximos pasos concretos:
+
+1. Realizar las pruebas humanas de comprensión, accesibilidad y umbrales del
+   ciclo de validación final.
+2. Al restablecer la sesión administrativa, sembrar y verificar técnicamente
+   `rhythm_count`; después revisar con estudiantes la comprensión del orden,
+   feedback y umbrales antes de presentar dominio.
+
+## Relevo de sesión — checkpoint de contexto
+
+- Objetivo: preservar contexto automáticamente antes de compactar Codex.
+- Implementación: hook PreCompact automático y script determinista; actualiza
+  sólo el bloque delimitado de este documento. Guía: `.codex/README.md`.
+- Decisión: reutilizar este estado canónico; evitar un PROGRESS.md redundante.
+  El agente mantiene la síntesis semántica; no lanzar un Codex secundario ni
+  copiar mensajes del transcript para evitar recursión y filtración de secretos.
+- Alcance: configuración, script y documentación; sin cambios de producto,
+  commits ni promoción de ramas por instrucción expresa de esta entrega.
+- Pendiente: confiar en el hook mediante `/hooks` y verificar el primer disparo
+  automático real. Umbral de contexto opcional; configuración global intacta.
+- Validación de esta entrega: seis pruebas del hook aprobadas; sintaxis JSON y
+  Python correctas; dos ejecuciones manuales actualizan un único bloque;
+  `git diff --check` correcto. No se ejecutaron pruebas de producto porque no
+  cambió código de aplicación. Comando: `python3 .codex/hooks/test_checkpoint.py`.
+- Próximo paso: tras activar el hook, retomar el orden de producto descrito abajo.
+
 ## Dirección de producto confirmada
 
 MusicAula es una plataforma de **solfeo**: lectura, ritmo, oído y teoría
@@ -209,3 +315,47 @@ Contrato técnico publicado:
   una compactación de contexto.
 - `../piano-app-api/AGENTS.md` y `../piano-app-api/README.md`: contrato de la
   API, esquema y estado de las migraciones.
+
+<!-- codex-checkpoint:start -->
+## Checkpoint automático de contexto
+
+_Last checkpoint: 2026-09-07 17:26:41 UTC_
+
+El relevo semántico de este documento sigue siendo la fuente canónica; reconciliar con Git.
+Sesión: manual-test; turno: subdir-test; trigger: auto.
+
+### Estado de implementación / archivos relevantes
+```text
+ M AGENTS.md
+ M docs/current-status.md
+?? .codex/
+
+```
+### Cambios sin preparar
+```text
+ AGENTS.md              | 24 +++++++++++++++++++
+ docs/current-status.md | 62 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 86 insertions(+)
+
+```
+### Cambios preparados
+```text
+
+```
+### Historial reciente (identificadores)
+```text
+01dc510
+d84bf10
+32d8ecc
+ef554df
+75eb035
+
+```
+### Transcript / incertidumbre
+No proporcionado; usar el relevo mantenido por el agente.
+
+### Validación y próximos pasos
+- El hook no ejecuta build/tests y no declara resultados nuevos.
+- Leer el relevo de sesión y las validaciones previas; comprobar cambios reales y bloqueos.
+- Continuar el próximo paso autorizado; actualizar objetivo, decisiones y resultados al avanzar.
+<!-- codex-checkpoint:end -->

@@ -100,6 +100,15 @@ function LessonContent({
         )}
         {progress.error && <p className="mt-3 text-sm text-amber-100">No pudimos comprobar el avance. Inténtalo de nuevo.</p>}
       </section>
+
+      {lesson.nextLesson && (
+        <Link
+          href={`/sections/${code}/${lesson.nextLesson.topicCode}/lesson/${lesson.nextLesson.id}`}
+          className="mt-6 inline-flex rounded-2xl bg-cyan-300 px-4 py-2 text-sm font-medium text-slate-950"
+        >
+          Siguiente lección: {lesson.nextLesson.title}
+        </Link>
+      )}
     </main>
   );
 }

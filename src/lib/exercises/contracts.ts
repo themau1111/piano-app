@@ -301,7 +301,10 @@ export type LessonBlock = {
   exercise: { id: number; title: string; kind: ExerciseKind } | null;
 };
 
-export type LessonDetail = LessonSummary & { blocks: LessonBlock[] };
+export type LessonDetail = LessonSummary & {
+  blocks: LessonBlock[];
+  nextLesson: { id: number; code: string; title: string; topicCode: string } | null;
+};
 
 export type ProgressStats = {
   attempts: number;
