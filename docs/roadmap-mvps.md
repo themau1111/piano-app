@@ -1,7 +1,9 @@
 # Hoja de ruta por MVPs — MusicAula
 
-> Estado: planificación acordada el 3 de septiembre de 2026. Esta hoja de ruta
-> no describe capacidades entregadas. La fuente de verdad del estado actual es
+> Estado: hoja de ruta acordada el 3 de septiembre de 2026, con actualización
+> técnica el 8 de septiembre. Las secciones de MVP conservan la planificación;
+> el bloque de estado distingue lo ya publicado de las validaciones pendientes.
+> La fuente de verdad del estado actual es
 > [`AGENTS.md`](../AGENTS.md); los contratos HTTP operativos viven en Swagger y
 > en `../piano-app-api/src/`.
 
@@ -29,11 +31,20 @@ Ya existe el flujo de secciones y temas, los ejercicios ejecutables, el piano
 visual, reproducción de audio, cuentas de Supabase, preferencias y una cola de
 práctica. La API hermana (`../piano-app-api`) es responsable de catálogo,
 generación/evaluación de corridas, progreso autenticado y administración. Sus
-seis tipos actuales son `keyboard_note`, `staff_note`, `ear_interval`,
-`melodic_direction`, `scale_construction` y `chord_identification`. El seed
-`solfege-foundations` crea la primera actividad de dirección melódica sin
-instrumento y la lección persistida «¿La melodía sube o baja?», con explicación,
-práctica y cierre; todavía no constituye una unidad principiante completa.
+ocho tipos son `keyboard_note`, `staff_note`, `ear_interval`,
+`melodic_direction`, `rhythm_pulse`, `rhythm_count`, `scale_construction` y
+`chord_identification`.
+
+### Actualización técnica publicada — 8 de septiembre
+
+El seed `solfege-foundations` publica una secuencia de diez temas ordenados:
+pulso, dirección, notas naturales, lectura en clave de sol, ritmo, repaso,
+intervalos al oído, lectura y escucha de intervalos, escala de Do mayor y
+acorde de Do mayor. Cada tema tiene una lección con explicación, práctica y
+recap; la API conserva la respuesta canónica. Las prácticas de escala y acorde
+evalúan las notas seleccionadas, no orden, tempo ni interpretación. Las pruebas
+humanas, la revisión musical y los umbrales pedagógicos siguen pendientes por
+decisión de producto.
 
 No están entregados como producto fiable: contenido de una ruta completa,
 feedback por error para todo el catálogo, MIDI, evaluación de tempo o

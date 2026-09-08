@@ -4,6 +4,19 @@
 > el trabajo tras compactar contexto. No sustituye [`current-status.md`](current-status.md),
 > que conserva el estado de producto y validación.
 
+## Estado actual — 8 de septiembre de 2026
+
+La ruta técnica publicada de Fundamentos contiene diez temas ordenados, desde
+pulso hasta un acorde de Do mayor. Las últimas entregas de API son `448d15b`
+(lectura y escucha de intervalos), `f04c995` (escala de Do mayor) y `7da1c0a`
+(acorde de Do mayor); Render confirmó cada una como activa y los seeds se
+verificaron en catálogo, API pública y navegador sin enviar respuestas. La
+fuente compacta y vigente de detalle es [`current-status.md`](current-status.md).
+
+Lo que sigue pendiente es humano: revisión musical, comprensión, accesibilidad
+y umbrales. El resto de este documento conserva el historial técnico anterior y
+no debe interpretarse como estado más reciente.
+
 ## Estado confirmado
 
 El frontend publicó el consumo del contrato mediante `development → main` con

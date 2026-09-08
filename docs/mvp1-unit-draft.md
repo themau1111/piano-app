@@ -1,8 +1,9 @@
 # Borrador de revisión — Unidad 1: primeros vínculos de solfeo
 
-> Estado: borrador de diseño pedagógico. No está publicado en el catálogo ni
-> aprobado como currículo. Requiere revisión de una persona con conocimiento
-> musical antes de transformarlo en lecciones, plantillas o seeds.
+> Estado: diseño pedagógico con implementación técnica publicada. La ruta y sus
+> seeds existen en el catálogo, pero no están aprobados como currículo validado:
+> requieren revisión musical y pruebas con estudiantes antes de afirmar eficacia
+> pedagógica o dominio.
 
 ## Propósito y población
 
@@ -42,9 +43,10 @@ La persona puede:
 | 5 | Primera lectura en clave de sol | Lee una nota natural en un rango de cinco notas, la nombra y la relaciona con el teclado. | Nombre de nota y ubicación visual. | Leer y tocar/clicar. | `staff_note` restringido a cinco notas sin líneas adicionales; feedback separa nombre, altura y posición. |
 | 6 | Recuperación conectada | Elige o ejecuta la conexión correcta entre una nota escrita, su nombre y un par sonoro. | Lecciones 1–5. | Mixta. | Reto corto con una sola variable evaluada por vez; recomienda una lección concreta según el error. |
 
-No se deben sembrar las lecciones 1, 3, 5 o 6 hasta que se confirme que sus
-respuestas, feedback y criterios pueden expresarse con contratos existentes o
-con una evolución compatible entre frontend y API.
+Las lecciones 1–6 ya se sembraron técnicamente con contratos compatibles. La
+secuencia publicada añade después intervalos, una práctica de lectura y escucha,
+escala y acorde de Do mayor. Falta confirmar con revisión musical y estudiantes
+que el orden, feedback y criterios provisionales cumplen su propósito.
 
 ## Reglas de contenido y feedback
 
