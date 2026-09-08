@@ -44,7 +44,8 @@ acorde de Do mayor. Cada tema tiene una lección con explicación, práctica y
 recap; la API conserva la respuesta canónica. Las prácticas de escala y acorde
 evalúan las notas seleccionadas, no orden, tempo ni interpretación. Las pruebas
 humanas, la revisión musical y los umbrales pedagógicos siguen pendientes por
-decisión de producto.
+decisión de producto. La matriz de ejecución técnica y la separación de
+pruebas humanas están en [`qa-initial-solfege-route.md`](qa-initial-solfege-route.md).
 
 No están entregados como producto fiable: contenido de una ruta completa,
 feedback por error para todo el catálogo, MIDI, evaluación de tempo o
