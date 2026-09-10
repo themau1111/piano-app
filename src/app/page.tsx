@@ -72,11 +72,11 @@ export default function HomePage() {
                 </Link>
               ) : (
                 <Link href="/sections/basic" className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-medium text-slate-950">
-                  Explorar el piano
+                  Continuar ruta
                 </Link>
               )}
-              <Link href="/preferences" className="rounded-2xl border border-white/15 px-5 py-3 text-sm font-medium text-white/80 hover:bg-white/5">
-                Ver rutas
+              <Link href="/practice" className="rounded-2xl border border-white/15 px-5 py-3 text-sm font-medium text-white/80 hover:bg-white/5">
+                Práctica libre
               </Link>
             </div>
           </div>

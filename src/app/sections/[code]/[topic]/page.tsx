@@ -68,11 +68,9 @@ export default function TopicPage({ params }: { params: Promise<{ code: string; 
           <article key={exercise.id} className="rounded-[24px] border border-white/10 bg-white/5 p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-white/45">{exercise.kind}</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-cyan-300/70">Reto guiado</p>
                 <h2 className="mt-2 text-xl font-medium">{exercise.title}</h2>
-                <p className="mt-2 text-sm text-white/65">
-                  Skill: {exercise.config.skillCode} · nivel {exercise.config.levelIndex}
-                </p>
+                {exercise.description && <p className="mt-2 text-sm text-white/65">{exercise.description}</p>}
               </div>
               <Link
                 href={`/sections/${code}/${topicCode}/exercise/${exercise.id}`}

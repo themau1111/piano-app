@@ -10,14 +10,19 @@ type Props = {
   onKeyDown: (midi: number) => void;
   onKeyUp: (midi: number) => void;
   range?: [number, number];
+  showLabels?: boolean;
   /** Keeps a pressed note sounding until it is tapped again or cleared externally. */
   captureMode?: boolean;
 };
 
-export function SimplePiano({ active, selected = new Set(), onKeyDown, onKeyUp, range = [60, 72], captureMode = false }: Props) {
+export function SimplePiano({ active, selected = new Set(), onKeyDown, onKeyUp, range = [60, 72], captureMode = false, showLabels = false }: Props) {
   const sampler = useRef<Tone.Sampler | null>(null);
   const pressedKeys = useRef<Set<string>>(new Set());
   const capturedNotes = useRef<Set<number>>(new Set());
+  // Pointer capture belongs to the element that received the initial touch.
+  // Keep the note independently so a second finger can move without releasing
+  // the first one (and so a cancelled touch never leaves a note sounding).
+  const pointerNotes = useRef<Map<number, number>>(new Map());
 
   useEffect(() => {
     if (!sampler.current) {
@@ -28,7 +33,9 @@ export function SimplePiano({ active, selected = new Set(), onKeyDown, onKeyUp, 
           "F#4": "Fs4.mp3",
           A4: "A4.mp3",
         },
-        release: 0.35,
+        // A keyboard release has a short tail.  The previous envelope made
+        // quick taps feel unnaturally clipped on touch devices.
+        release: 0.65,
         baseUrl: "https://tonejs.github.io/audio/salamander/",
       }).toDestination();
     }
@@ -78,6 +85,21 @@ export function SimplePiano({ active, selected = new Set(), onKeyDown, onKeyUp, 
     sampler.current?.triggerRelease(midiToNote(m));
   }, [captureMode, onKeyUp]);
 
+  const releasePointer = useCallback((pointerId: number) => {
+    const midi = pointerNotes.current.get(pointerId);
+    if (midi == null) return;
+    pointerNotes.current.delete(pointerId);
+    handleUp(midi);
+  }, [handleUp]);
+
+  const movePointerTo = useCallback((pointerId: number, nextMidi: number) => {
+    const currentMidi = pointerNotes.current.get(pointerId);
+    if (currentMidi === nextMidi) return;
+    if (currentMidi != null) handleUp(currentMidi);
+    pointerNotes.current.set(pointerId, nextMidi);
+    void handleDown(nextMidi);
+  }, [handleDown, handleUp]);
+
   useEffect(() => {
     capturedNotes.current.forEach((midi) => {
       if (active.has(midi)) return;
@@ -117,6 +139,8 @@ export function SimplePiano({ active, selected = new Set(), onKeyDown, onKeyUp, 
         if (midi != null) handleUp(midi);
       });
       pressedKeys.current.clear();
+      pointerNotes.current.forEach((midi) => handleUp(midi));
+      pointerNotes.current.clear();
     };
 
     window.addEventListener("keydown", down);
@@ -130,21 +154,38 @@ export function SimplePiano({ active, selected = new Set(), onKeyDown, onKeyUp, 
   }, [handleDown, handleUp, keyboardMidiMap]);
 
   return (
-    <div className="relative w-full h-full select-none">
+    <div
+      className="relative h-full w-full select-none touch-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
+      onContextMenu={(event) => event.preventDefault()}
+      onPointerMove={(event) => {
+        if (captureMode || !pointerNotes.current.has(event.pointerId)) return;
+        const target = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
+        const key = target?.closest<HTMLButtonElement>("button[data-midi]");
+        const nextMidi = Number(key?.dataset.midi);
+        if (Number.isInteger(nextMidi)) movePointerTo(event.pointerId, nextMidi);
+      }}
+      onPointerUp={(event) => releasePointer(event.pointerId)}
+      onPointerCancel={(event) => releasePointer(event.pointerId)}
+    >
       {/* BLANCAS */}
       <div className="flex w-full h-full">
         {whiteKeys.map((m) => (
           <button
             key={m}
+            data-midi={m}
             onPointerDown={(event) => {
+              event.preventDefault();
               event.currentTarget.setPointerCapture(event.pointerId);
+              if (!captureMode) pointerNotes.current.set(event.pointerId, m);
               handleDown(m);
             }}
-            onPointerUp={() => handleUp(m)}
-            onPointerCancel={() => handleUp(m)}
+            onPointerUp={(event) => releasePointer(event.pointerId)}
+            onPointerCancel={(event) => releasePointer(event.pointerId)}
             className={`flex-1 h-full border border-slate-300 bg-gradient-to-b from-white to-slate-100 transition-all duration-75 ease-out ${active.has(m) ? "translate-y-1 border-cyan-300 bg-cyan-100 shadow-[inset_0_5px_12px_rgba(8,145,178,0.32)]" : selected.has(m) ? "ring-2 ring-green-500" : "shadow-[inset_0_-5px_0_rgba(148,163,184,0.25)] hover:from-cyan-50"}`}
             aria-label={`Tocar ${midiToNote(m)}`}
-          />
+          >
+            {showLabels && <span className="pointer-events-none mt-auto pb-2 text-[10px] font-semibold text-slate-600 sm:text-xs">{midiToNote(m).replace(/[0-9-]/g, "")}</span>}
+          </button>
         ))}
       </div>
 
@@ -156,21 +197,26 @@ export function SimplePiano({ active, selected = new Set(), onKeyDown, onKeyUp, 
           return (
             <button
               key={m}
+              data-midi={m}
               onPointerDown={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 e.currentTarget.setPointerCapture(e.pointerId);
+                if (!captureMode) pointerNotes.current.set(e.pointerId, m);
                 handleDown(m);
               }}
               onPointerUp={(e) => {
                 e.stopPropagation();
-                handleUp(m);
+                releasePointer(e.pointerId);
               }}
-              onPointerCancel={() => handleUp(m)}
+              onPointerCancel={(event) => releasePointer(event.pointerId)}
               style={{ left: `${left}%`, width: `${wBlack}%` }}
               className={`absolute top-0 translate-x-[-50%] h-full
                           border border-slate-950 bg-gradient-to-b from-slate-700 to-slate-950 shadow-[inset_0_-5px_0_rgba(0,0,0,0.65)] transition-all duration-75 ease-out pointer-events-auto ${active.has(m) ? "translate-y-1 border-cyan-300 from-cyan-500 to-cyan-800 shadow-[inset_0_5px_10px_rgba(8,47,73,0.7)]" : selected.has(m) ? "ring-2 ring-green-500" : "hover:from-slate-600"}`}
               aria-label={`Tocar ${midiToNote(m)}`}
-            />
+            >
+              {showLabels && <span className="pointer-events-none mt-1 block text-[9px] font-medium text-white/80">{midiToNote(m).replace(/[0-9-]/g, "")}</span>}
+            </button>
           );
         })}
       </div>

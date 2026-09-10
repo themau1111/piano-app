@@ -16,7 +16,7 @@ function midiToVexKey(midi: number) {
   };
 }
 
-export function StaffPrompt({ notes, clef = "treble" }: { notes: StaffRenderNote[]; clef?: "treble" }) {
+export function StaffPrompt({ notes, clef = "treble", variant = "default" }: { notes: StaffRenderNote[]; clef?: "treble"; variant?: "default" | "incorrect" | "selected" }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -45,6 +45,8 @@ export function StaffPrompt({ notes, clef = "treble" }: { notes: StaffRenderNote
       keys: keys.map((item) => item.key),
       duration: "q",
     });
+    if (variant === "incorrect") note.setStyle({ fillStyle: "#fb7185", strokeStyle: "#fb7185" });
+    if (variant === "selected") note.setStyle({ fillStyle: "#67e8f9", strokeStyle: "#67e8f9" });
 
     keys.forEach((item, index) => {
       if (item.accidental) {
@@ -57,7 +59,7 @@ export function StaffPrompt({ notes, clef = "treble" }: { notes: StaffRenderNote
 
     new Formatter().joinVoices([voice]).format([voice], width - 110);
     voice.draw(context, stave);
-  }, [clef, notes]);
+  }, [clef, notes, variant]);
 
   return <div ref={ref} className="w-full overflow-hidden rounded-xl bg-[#101b33]" />;
 }

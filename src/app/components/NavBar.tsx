@@ -53,7 +53,7 @@ export default function Navbar() {
     function onDocClick(e: MouseEvent) {
       if (!headerRef.current) return;
       if (!headerRef.current.contains(e.target as Node)) {
-        setNavUi((prev) => ({ ...prev, openDesktopSection: null }));
+        setNavUi((prev) => ({ ...prev, openDesktopSection: null, mobileOpen: false, mobileOpenSection: null }));
       }
     }
     document.addEventListener("click", onDocClick);
@@ -93,6 +93,7 @@ export default function Navbar() {
 
           {/* Sections (desktop) → click para desplegar */}
           <nav className="hidden md:flex items-center gap-1">
+            <Link href="/practice" className={cn("rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-white", pathname.startsWith("/practice") && "bg-white/10 text-white")}>Práctica libre</Link>
             {(sections ?? []).map((s: any) => {
               const topics = topicsMap?.[s.code] ?? [];
               const isSectionActive = currentSection === s.code;
@@ -192,6 +193,7 @@ export default function Navbar() {
               >
                 Inicio
               </Link>
+              <Link href="/practice" onClick={() => setNavUi((prev) => ({ ...prev, mobileOpen: false, mobileOpenSection: null }))} className={cn("mb-2 block rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/5", pathname.startsWith("/practice") && "bg-white/10 text-white")}>Práctica libre</Link>
               {!sections?.length && <p className="px-3 py-2 text-sm text-white/50">Cargando rutas de aprendizaje…</p>}
               {(sections ?? []).map((s: any) => {
                 const topics = topicsMap?.[s.code] ?? [];

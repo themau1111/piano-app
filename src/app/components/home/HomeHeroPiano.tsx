@@ -5,8 +5,8 @@ import * as Tone from "tone";
 import { SimplePiano } from "../SimplePiano";
 import { analyzeChord } from "@/lib/analyzeChord";
 import { formatChordName } from "@/lib/formatChordName";
-
-const DEFAULT_RANGE: [number, number] = [60, 83];
+import { useKeyboardPreferences } from "@/app/hooks/useKeyboardPreferences";
+import { KeyboardControls } from "@/app/components/keyboard/KeyboardControls";
 
 function midiToLabel(midi: number) {
   return Tone.Frequency(midi, "midi").toNote();
@@ -32,6 +32,9 @@ export function HomeHeroPiano({
 }) {
   const [captureMode, setCaptureMode] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const { preferences, update } = useKeyboardPreferences();
+  const keyboardRange: [number, number] = [preferences.startMidi, preferences.startMidi + preferences.visibleOctaves * 12 - 1];
 
   const activeLabels = useMemo(
     () =>
@@ -142,11 +145,21 @@ export function HomeHeroPiano({
         >
           Limpiar
         </button>
+        <button
+          type="button"
+          onClick={() => setShowControls((shown) => !shown)}
+          aria-expanded={showControls || isExpanded}
+          className="rounded-xl border border-white/15 px-3 py-2 text-xs font-medium text-white/70 hover:bg-white/10"
+        >
+          Opciones
+        </button>
       </div>
+
+      {(isExpanded || showControls) && <div className="mb-3 rounded-xl border border-white/10 bg-white/5 p-2"><KeyboardControls preferences={preferences} onChange={update} /></div>}
 
       <div className="overflow-x-auto rounded-[24px] border border-white/10 bg-[#07101f] p-3">
         <div className={isExpanded ? "h-[min(56dvh,22rem)] min-w-[42rem]" : "h-44 sm:h-52"}>
-          <SimplePiano active={active} onKeyDown={handleDown} onKeyUp={handleUp} range={DEFAULT_RANGE} captureMode={captureMode} />
+          <SimplePiano active={active} onKeyDown={handleDown} onKeyUp={handleUp} range={keyboardRange} captureMode={captureMode} showLabels={preferences.showLabels} />
         </div>
       </div>
 

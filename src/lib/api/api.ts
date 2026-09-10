@@ -7,6 +7,8 @@ import {
   LessonDetail,
   LessonSummary,
   PracticeQueueResponse,
+  PracticePreset,
+  PracticeSession,
   ProgressResponse,
   Section,
   Topic,
@@ -96,6 +98,30 @@ export async function startExercise(id: number, payload?: { seed?: number }) {
     method: "POST",
     body: JSON.stringify(payload ?? {}),
   });
+}
+
+export async function fetchPracticePresets() {
+  return apiFetch<PracticePreset[]>("/exercises/practice/presets");
+}
+
+export async function startPracticeSession(payload: {
+  exerciseId: number;
+  locale: "es" | "en";
+  questionLimit?: number;
+  secondsPerQuestion?: number;
+  config?: Record<string, unknown>;
+}) {
+  return apiFetch<{ session: PracticeSession; run: ExerciseRunSnapshot }>("/exercises/practice/sessions", {
+    method: "POST", body: JSON.stringify(payload),
+  });
+}
+
+export async function nextPracticeSessionRun(sessionId: string) {
+  return apiFetch<ExerciseRunSnapshot>(`/exercises/practice/sessions/${sessionId}/next`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function timeoutExerciseRun(runId: string) {
+  return apiFetch<{ ok: boolean; run: ExerciseRunSnapshot }>(`/exercise-runs/${runId}/timeout`, { method: "POST", body: JSON.stringify({}) });
 }
 
 export async function getExerciseRun(runId: string) {

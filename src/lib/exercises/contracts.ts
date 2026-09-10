@@ -231,6 +231,32 @@ export type ExerciseRunSnapshot = {
   input: ExerciseInputSpec;
   presentation: ExercisePresentation;
   feedback: RunFeedback | null;
+  mode?: "guided" | "free";
+  locale?: "es" | "en";
+  sessionId?: string | null;
+  questionExpiresAt?: string | null;
+};
+
+export type PracticePreset = {
+  id: number | null;
+  exerciseId: number;
+  code: string;
+  title: string;
+  description: string;
+  kind: ExerciseKind;
+  config: ExerciseTemplateConfig;
+  isFeatured: boolean;
+};
+
+export type PracticeSession = {
+  id: string;
+  exerciseId: number;
+  locale: "es" | "en";
+  questionLimit: number | null;
+  secondsPerQuestion: number | null;
+  completedCount: number;
+  correctCount: number;
+  endedAt: string | null;
 };
 
 export type ExerciseAttemptAnswer = {

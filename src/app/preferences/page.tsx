@@ -11,6 +11,9 @@ export default function PreferencesPage() {
 
   async function handleSave() {
     await save(data);
+    // Music notation follows the existing global language preference. Keep a
+    // small local mirror so guest practice and the first render stay coherent.
+    localStorage.setItem("musicaula:notation-locale", data.locale === "en" ? "en" : "es");
     router.replace("/");
   }
 

@@ -8,6 +8,9 @@ import {
   replayExerciseRun,
   revealExerciseRun,
   startExercise,
+  nextPracticeSessionRun,
+  startPracticeSession,
+  timeoutExerciseRun,
 } from "@/lib/api/api";
 import type {
   ExerciseAttemptAnswer,
@@ -21,6 +24,8 @@ import { SimplePiano } from "../SimplePiano";
 import { StaffPrompt } from "./StaffPrompt";
 import { writeLocalStats } from "@/lib/progress-local";
 import { useAuth } from "@/lib/auth-store";
+import { useKeyboardPreferences } from "@/app/hooks/useKeyboardPreferences";
+import { KeyboardControls } from "@/app/components/keyboard/KeyboardControls";
 
 const METRONOME_TEMPO_KEY = "musicaula:metronome-tempo";
 
@@ -35,9 +40,11 @@ function normalizeSelection(selection: Set<number>) {
 export function ExerciseRunner({
   exercise,
   preferences,
+  practice,
 }: {
   exercise: ExerciseDetail;
   preferences: Prefs | null;
+  practice?: { locale: "es" | "en"; questionLimit?: number; secondsPerQuestion?: number; config?: Record<string, unknown> };
 }) {
   const { mode } = useAuth();
   const sampler = useRef<Tone.Sampler | null>(null);
@@ -58,6 +65,10 @@ export function ExerciseRunner({
   const [showRhythmGuide, setShowRhythmGuide] = useState(false);
   const [chordName, setChordName] = useState("");
   const [inversion, setInversion] = useState<string>("");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [showKeyboardControls, setShowKeyboardControls] = useState(false);
+  const { preferences: keyboardPreferences, update: updateKeyboardPreferences } = useKeyboardPreferences();
 
   const storageKey = useMemo(() => `exercise-run:${exercise.id}`, [exercise.id]);
   const keyboardRange = useMemo<[number, number]>(() => {
@@ -125,7 +136,7 @@ export function ExerciseRunner({
     setLoadError(false);
     setAudioError(false);
     try {
-      const storedRunId = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
+      const storedRunId = !practice && typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
       if (storedRunId) {
         const existing = await getExerciseRun(storedRunId);
         if (existing.exercise.id === exercise.id) {
@@ -143,8 +154,12 @@ export function ExerciseRunner({
         }
       }
 
-      const started = await startExercise(exercise.id);
-      if (typeof window !== "undefined") {
+      const startedResponse = practice
+        ? await startPracticeSession({ exerciseId: exercise.id, locale: practice.locale, questionLimit: practice.questionLimit, secondsPerQuestion: practice.secondsPerQuestion, config: practice.config })
+        : null;
+      const started = startedResponse?.run ?? await startExercise(exercise.id);
+      if (startedResponse) setSessionId(startedResponse.session.id);
+      if (!practice && typeof window !== "undefined") {
         localStorage.setItem(storageKey, started.runId);
       }
       setRun(started);
@@ -162,18 +177,31 @@ export function ExerciseRunner({
     } finally {
       setLoading(false);
     }
-  }, [exercise.id, autoReplay, storageKey]);
+  }, [exercise.id, autoReplay, storageKey, practice]);
 
   useEffect(() => {
     void hydrateRun();
   }, [hydrateRun]);
 
   useEffect(() => {
-    if (!run) return;
+    if (!run || practice) return;
     if (typeof window !== "undefined") {
       localStorage.setItem(storageKey, run.runId);
     }
-  }, [run, storageKey]);
+  }, [run, storageKey, practice]);
+
+  useEffect(() => {
+    if (!run?.questionExpiresAt) { setSecondsLeft(null); return; }
+    const tick = () => setSecondsLeft(Math.max(0, Math.ceil((Date.parse(run.questionExpiresAt!) - Date.now()) / 1000)));
+    tick();
+    const interval = window.setInterval(tick, 250);
+    return () => window.clearInterval(interval);
+  }, [run?.questionExpiresAt]);
+
+  useEffect(() => {
+    if (secondsLeft !== 0 || !run || run.status !== "active") return;
+    void timeoutExerciseRun(run.runId).then((result) => setRun(result.run)).catch(() => setLoadError(true));
+  }, [run, secondsLeft]);
 
   const hasRhythmPrompt = run?.prompt.kind === "rhythm_pulse" || run?.prompt.kind === "rhythm_count";
 
@@ -237,6 +265,20 @@ export function ExerciseRunner({
   }
 
   async function handleNext() {
+    if (practice && sessionId) {
+      setWorking(true);
+      try {
+        const next = await nextPracticeSessionRun(sessionId);
+        setRun(next);
+        setSelected(new Set());
+        setActive(new Set());
+      } catch {
+        setLoadError(true);
+      } finally {
+        setWorking(false);
+      }
+      return;
+    }
     if (typeof window !== "undefined") {
       localStorage.removeItem(storageKey);
     }
@@ -280,6 +322,8 @@ export function ExerciseRunner({
   const isRunActive = run?.status === "active";
 
   const selectedLabels = normalizeSelection(selected).map(midiToLabel);
+  const selectedStaffNotes = normalizeSelection(selected).map((midi) => ({ midi }));
+  const showSelectionOnStaff = run?.prompt.kind === "scale_construction" || run?.prompt.kind === "chord_identification";
   const revealLabel = run?.feedback?.reveal?.label;
   const nextStep = run?.feedback?.nextStep
     ? `Paso siguiente: ${run.feedback.nextStep}`
@@ -308,23 +352,22 @@ export function ExerciseRunner({
       {audioError && <p role="alert">No se pudo reproducir el audio. Comprueba tu conexión y pulsa Reproducir para intentarlo de nuevo.</p>}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-300/70">{run.exercise.skillCode}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-300/70">{practice ? "Práctica libre" : "Reto guiado"}</p>
           <h2 className="text-2xl font-semibold">{run.exercise.title}</h2>
           <p className="mt-2 text-sm text-white/70">{run.prompt.text}</p>
           <p className="mt-1 text-xs text-white/50">
-            {preferences?.practice?.minutesPerDay ?? 20} min diarios · nivel {run.exercise.levelIndex} · {mode === "guest" ? "progreso guardado en este dispositivo" : "progreso guardado en tu perfil"}
+            {practice ? "Configura, prueba y ajusta a tu ritmo." : `${preferences?.practice?.minutesPerDay ?? 20} min diarios · ${mode === "guest" ? "progreso guardado en este dispositivo" : "progreso guardado en tu perfil"}`}
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-          <div>Intentos: {run.attemptsLeft}</div>
-          <div className="mt-1 text-white/60">Estado: {run.status}</div>
-        </div>
+        {secondsLeft != null && <div className="rounded-2xl border border-amber-200/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-50">{secondsLeft}s por responder</div>}
       </header>
 
       <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
         <p className="mb-3 text-sm text-white/70">{run.presentation.instructions}</p>
         {run.presentation.staffNotes?.length ? (
           <StaffPrompt notes={run.presentation.staffNotes} clef={run.presentation.clef ?? "treble"} />
+        ) : showSelectionOnStaff ? (
+          <StaffPrompt notes={selectedStaffNotes} clef="treble" variant={run.feedback && !run.feedback.correct ? "incorrect" : "selected"} />
         ) : (
           <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-5 text-sm text-white/55">
             Este ejercicio no necesita pentagrama visible.
@@ -500,10 +543,11 @@ export function ExerciseRunner({
         <div className="space-y-4 rounded-2xl border border-white/10 bg-black/20 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-white/70">
             <span>Selección: {selectedLabels.join(", ") || "ninguna"}</span>
-            <span>Atajos del teclado activos dentro del rango visible.</span>
+            <button type="button" onClick={() => setShowKeyboardControls((shown) => !shown)} className="rounded-lg border border-white/15 px-2 py-1 text-xs hover:bg-white/10">Opciones de teclado</button>
           </div>
+          {showKeyboardControls && <KeyboardControls preferences={keyboardPreferences} onChange={updateKeyboardPreferences} />}
           <div className="h-44 w-full sm:h-52">
-            <SimplePiano active={active} selected={selected} onKeyDown={onPianoDown} onKeyUp={onPianoUp} range={keyboardRange} />
+            <SimplePiano active={active} selected={selected} onKeyDown={onPianoDown} onKeyUp={onPianoUp} range={keyboardRange} showLabels={keyboardPreferences.showLabels} />
           </div>
         </div>
       )}
