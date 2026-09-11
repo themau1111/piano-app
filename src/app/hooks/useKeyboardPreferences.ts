@@ -7,6 +7,7 @@ export type KeyboardPreferences = {
   visibleOctaves: 2 | 3;
   startMidi: number;
   meter: 2 | 3 | 4 | 6;
+  tempo: number;
 };
 
 const STORAGE_KEY = "musicaula:keyboard-preferences";
@@ -15,13 +16,15 @@ const defaults: KeyboardPreferences = {
   visibleOctaves: 2,
   startMidi: 48,
   meter: 4,
+  tempo: 72,
 };
 
 function normalize(value: Partial<KeyboardPreferences>): KeyboardPreferences {
   const visibleOctaves = value.visibleOctaves === 3 ? 3 : 2;
   const meter = value.meter === 2 || value.meter === 3 || value.meter === 6 ? value.meter : 4;
   const startMidi = Math.min(84 - visibleOctaves * 12, Math.max(24, Math.round(value.startMidi ?? defaults.startMidi)));
-  return { showLabels: Boolean(value.showLabels), visibleOctaves, startMidi, meter };
+  const tempo = Math.min(180, Math.max(40, Math.round(value.tempo ?? defaults.tempo)));
+  return { showLabels: Boolean(value.showLabels), visibleOctaves, startMidi, meter, tempo };
 }
 
 export function useKeyboardPreferences() {

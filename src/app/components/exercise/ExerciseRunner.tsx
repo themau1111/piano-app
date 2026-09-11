@@ -68,15 +68,24 @@ export function ExerciseRunner({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [showKeyboardControls, setShowKeyboardControls] = useState(false);
+  const [completedExercises, setCompletedExercises] = useState(0);
+  const [correctExercises, setCorrectExercises] = useState(0);
+  const completedRunIds = useRef<Set<string>>(new Set());
   const { preferences: keyboardPreferences, update: updateKeyboardPreferences } = useKeyboardPreferences();
 
   const storageKey = useMemo(() => `exercise-run:${exercise.id}`, [exercise.id]);
   const keyboardRange = useMemo<[number, number]>(() => {
     if (!run) return [48, 84];
-    if (run.presentation.keyboardRange) return run.presentation.keyboardRange;
-    if ("keyboardRange" in run.prompt) return run.prompt.keyboardRange;
-    return [48, 84];
-  }, [run]);
+    if (run.prompt.kind === "keyboard_note" || run.prompt.kind === "staff_note") return [60, 71];
+    return [keyboardPreferences.startMidi, keyboardPreferences.startMidi + keyboardPreferences.visibleOctaves * 12 - 1];
+  }, [keyboardPreferences, run]);
+
+  useEffect(() => {
+    if (!run?.feedback || run.status === "active" || !practice || completedRunIds.current.has(run.runId)) return;
+    completedRunIds.current.add(run.runId);
+    setCompletedExercises((value) => value + 1);
+    if (run.feedback.correct) setCorrectExercises((value) => value + 1);
+  }, [practice, run]);
 
   useEffect(() => {
     if (!sampler.current) {
@@ -126,7 +135,7 @@ export function ExerciseRunner({
   const autoReplay = useCallback((snapshot: ExerciseRunSnapshot) => {
     // A fresh page may need a user gesture to unlock audio. Never make
     // loading the exercise depend on that gesture or on external samples.
-    if (snapshot.presentation.autoReplay && Tone.getContext().state === "running" && sampler.current?.loaded) {
+    if (snapshot.presentation.autoReplay) {
       void playEvents(snapshot.presentation.playback).catch(() => setAudioError(true));
     }
   }, [playEvents]);
@@ -207,10 +216,15 @@ export function ExerciseRunner({
 
   useEffect(() => {
     if (!metronomeRunning || !hasRhythmPrompt) return;
+    const metronome = new Tone.Synth({ volume: -16 }).toDestination();
+    void Tone.start().then(() => metronome.triggerAttackRelease("C6", "32n")).catch(() => setAudioError(true));
     const interval = window.setInterval(() => {
-      setMetronomeBeat((beat) => (beat % 4) + 1);
+      setMetronomeBeat((beat) => {
+        metronome.triggerAttackRelease(beat === 1 ? "C6" : "C5", "32n");
+        return (beat % 4) + 1;
+      });
     }, 60_000 / metronomeTempo);
-    return () => window.clearInterval(interval);
+    return () => { window.clearInterval(interval); metronome.dispose(); };
   }, [hasRhythmPrompt, metronomeRunning, metronomeTempo]);
 
   useEffect(() => {
@@ -259,6 +273,11 @@ export function ExerciseRunner({
     try {
       const res = await revealExerciseRun(run.runId);
       setRun(res.run);
+      if (res.run.input.mode === "chord-builder" && res.run.feedback?.reveal?.noteLabels?.length) {
+        const notes = new Set(res.run.feedback.reveal.noteLabels.map((label) => Tone.Frequency(label).toMidi()));
+        setSelected(notes);
+        setActive(notes);
+      }
     } finally {
       setWorking(false);
     }
@@ -272,6 +291,10 @@ export function ExerciseRunner({
         setRun(next);
         setSelected(new Set());
         setActive(new Set());
+        setIntervalChoice("");
+        setDirectionChoice("");
+        setPulseChoice(null);
+        setBeatCountChoice(null);
       } catch {
         setLoadError(true);
       } finally {
@@ -323,7 +346,9 @@ export function ExerciseRunner({
 
   const selectedLabels = normalizeSelection(selected).map(midiToLabel);
   const selectedStaffNotes = normalizeSelection(selected).map((midi) => ({ midi }));
-  const showSelectionOnStaff = run?.prompt.kind === "scale_construction" || run?.prompt.kind === "chord_identification";
+  const isKeyboardNote = run?.prompt.kind === "keyboard_note";
+  const showSelectionOnStaff = run?.prompt.kind === "scale_construction" || run?.prompt.kind === "chord_identification" || isKeyboardNote;
+  const displayedStaffNotes = isKeyboardNote && selectedStaffNotes.length ? selectedStaffNotes.slice(-1) : selectedStaffNotes;
   const revealLabel = run?.feedback?.reveal?.label;
   const nextStep = run?.feedback?.nextStep
     ? `Paso siguiente: ${run.feedback.nextStep}`
@@ -347,6 +372,11 @@ export function ExerciseRunner({
     return <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/80">Cargando ejercicio…</div>;
   }
 
+  const practiceFinished = Boolean(practice && practice.questionLimit && completedExercises >= practice.questionLimit && run.status !== "active");
+  if (practiceFinished) {
+    return <section className="mx-auto max-w-2xl rounded-3xl border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(16,27,51,0.95),rgba(7,13,26,0.95))] p-7 text-white"><p className="text-xs uppercase tracking-[.2em] text-cyan-200/70">Sesión terminada</p><h2 className="mt-2 text-3xl font-semibold">Terminaste tus {completedExercises} ejercicios.</h2><p className="mt-3 text-white/70">Respuestas correctas: {correctExercises} de {completedExercises}. Puedes seguir practicando con otra configuración.</p><div className="mt-6 flex flex-wrap gap-3"><Button onClick={() => window.location.assign("/practice")}>Volver a ejercicios</Button><Button variant="outline" onClick={() => window.location.reload()}>Repetir configuración</Button></div></section>;
+  }
+
   return (
     <section className="space-y-5 rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(16,27,51,0.95),rgba(7,13,26,0.95))] p-5 text-white shadow-2xl">
       {audioError && <p role="alert">No se pudo reproducir el audio. Comprueba tu conexión y pulsa Reproducir para intentarlo de nuevo.</p>}
@@ -360,19 +390,16 @@ export function ExerciseRunner({
           </p>
         </div>
         {secondsLeft != null && <div className="rounded-2xl border border-amber-200/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-50">{secondsLeft}s por responder</div>}
+        {practice?.questionLimit && <div className="rounded-2xl border border-cyan-200/25 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-50">Ejercicio {Math.min(completedExercises + 1, practice.questionLimit)} de {practice.questionLimit}</div>}
       </header>
 
       <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
         <p className="mb-3 text-sm text-white/70">{run.presentation.instructions}</p>
         {run.presentation.staffNotes?.length ? (
-          <StaffPrompt notes={run.presentation.staffNotes} clef={run.presentation.clef ?? "treble"} />
-        ) : showSelectionOnStaff ? (
-          <StaffPrompt notes={selectedStaffNotes} clef="treble" variant={run.feedback && !run.feedback.correct ? "incorrect" : "selected"} />
-        ) : (
-          <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-5 text-sm text-white/55">
-            Este ejercicio no necesita pentagrama visible.
-          </div>
-        )}
+          <StaffPrompt notes={(run.prompt.kind === "ear_interval" || run.prompt.kind === "melodic_direction") && !run.feedback ? run.presentation.staffNotes.slice(0, 1) : run.presentation.staffNotes} clef={run.presentation.clef ?? "treble"} variant={run.feedback ? (run.feedback.correct || run.status === "revealed" ? "selected" : "incorrect") : "default"} />
+        ) : showSelectionOnStaff && displayedStaffNotes.length ? (
+          <StaffPrompt notes={displayedStaffNotes} clef="treble" variant={run.feedback && !run.feedback.correct ? "incorrect" : "selected"} />
+        ) : null}
       </div>
 
       {hasRhythmPrompt && (
@@ -474,25 +501,6 @@ export function ExerciseRunner({
 
       {run.input.mode === "rhythm-options" && (
         <div className="space-y-3">
-          <div className="flex gap-3" aria-label="Patrón de cuatro pulsos">
-            {run.input.options.map((position) => {
-              const isSilence = run.prompt.kind === "rhythm_pulse" && run.prompt.silencePosition === position;
-              return (
-                <span
-                  key={position}
-                  aria-label={isSilence ? `Pulso ${position}: silencio` : `Pulso ${position}: sonido`}
-                  className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-full border text-lg",
-                    isSilence
-                      ? "border-dashed border-white/30 text-white/45"
-                      : "border-cyan-200/40 bg-cyan-300/10 text-cyan-50",
-                  )}
-                >
-                  {isSilence ? "" : "●"}
-                </span>
-              );
-            })}
-          </div>
           <div className="grid grid-cols-4 gap-2">
             {run.input.options.map((position) => (
               <button key={position} type="button" onClick={() => { setPulseChoice(position); submitAnswer({ pulsePosition: position }); }} disabled={working || !isRunActive} className={cn("rounded-xl border px-3 py-2 text-sm", pulseChoice === position ? "border-cyan-300 bg-cyan-300/10 text-cyan-100" : "border-white/10 bg-white/5 hover:bg-white/10")}>Pulso {position}</button>
@@ -542,8 +550,8 @@ export function ExerciseRunner({
       {(run.input.mode === "single-piano" || run.input.mode === "multi-piano" || run.input.mode === "chord-builder") && (
         <div className="space-y-4 rounded-2xl border border-white/10 bg-black/20 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-white/70">
-            <span>Selección: {selectedLabels.join(", ") || "ninguna"}</span>
-            <button type="button" onClick={() => setShowKeyboardControls((shown) => !shown)} className="rounded-lg border border-white/15 px-2 py-1 text-xs hover:bg-white/10">Opciones de teclado</button>
+            {!isKeyboardNote && <span>Selección: {selectedLabels.join(", ") || "ninguna"}</span>}
+            <button type="button" onClick={() => setShowKeyboardControls((shown) => !shown)} className="rounded-lg border border-white/15 px-2 py-1 text-xs hover:bg-white/10" aria-label="Opciones de teclado">⚙</button>
           </div>
           {showKeyboardControls && <KeyboardControls preferences={keyboardPreferences} onChange={updateKeyboardPreferences} />}
           <div className="h-44 w-full sm:h-52">
@@ -620,8 +628,8 @@ export function ExerciseRunner({
         <Button variant="ghost" onClick={handleReveal} disabled={working || !isRunActive}>
           Ver solución
         </Button>
-        <Button variant="solid" onClick={handleNext} disabled={working}>
-          Siguiente ejercicio
+        <Button variant="solid" onClick={handleNext} disabled={working || Boolean(practice && run.status === "active")}>
+          {practice ? `Siguiente ejercicio${practice.questionLimit ? ` · ${Math.min(completedExercises + 1, practice.questionLimit)}/${practice.questionLimit}` : ""}` : "Siguiente ejercicio"}
         </Button>
       </div>
     </section>

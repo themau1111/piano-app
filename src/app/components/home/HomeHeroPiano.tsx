@@ -151,7 +151,7 @@ export function HomeHeroPiano({
           aria-expanded={showControls || isExpanded}
           className="rounded-xl border border-white/15 px-3 py-2 text-xs font-medium text-white/70 hover:bg-white/10"
         >
-          Opciones
+          <span aria-hidden="true">⚙</span><span className="sr-only">Opciones</span>
         </button>
       </div>
 
