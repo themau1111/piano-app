@@ -218,7 +218,7 @@ export function ExerciseRunner({
 
   useEffect(() => {
     if (!metronomeRunning || !hasRhythmPrompt) return;
-    const metronome = new Tone.Synth({ volume: -16 }).toDestination();
+    const metronome = new Tone.Synth({ volume: -6 }).toDestination();
     void Tone.start().then(() => metronome.triggerAttackRelease("C6", "32n")).catch(() => setAudioError(true));
     const interval = window.setInterval(() => {
       setMetronomeBeat((beat) => {

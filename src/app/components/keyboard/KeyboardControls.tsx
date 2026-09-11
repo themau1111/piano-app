@@ -15,7 +15,8 @@ export function KeyboardControls({ preferences, onChange }: { preferences: Keybo
     pitchDecay: 0.003,
     octaves: 0.5,
     envelope: { attack: 0.001, decay: 0.06, sustain: 0, release: 0.01 },
-    volume: -20,
+    // Keep the metronome distinct and audible while the piano sampler plays.
+    volume: -6,
   }).toDestination());
 
   useEffect(() => () => {
