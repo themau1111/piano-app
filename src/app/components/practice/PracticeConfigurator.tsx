@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import * as Tone from "tone";
 import type { ExerciseDetail } from "@/lib/exercises/contracts";
+import { displayExerciseTitle } from "@/lib/exercises/display";
 import type { NotationLocale } from "@/app/hooks/useNotationLocale";
 
 type Practice = { locale: NotationLocale; questionLimit?: number; secondsPerQuestion?: number; config?: Record<string, unknown> };
@@ -43,7 +44,7 @@ export function PracticeConfigurator({ exercise, locale, renderRunner }: { exerc
   return <main className="mx-auto max-w-3xl px-4 py-10 text-white">
     <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
       <p className="text-xs uppercase tracking-[.2em] text-cyan-200/70">Práctica libre</p>
-      <h1 className="mt-2 text-3xl font-semibold">{exercise.kind === "ear_interval" ? "Intervalos simples" : exercise.kind === "scale_construction" ? "Escalas" : exercise.title}</h1>
+      <h1 className="mt-2 text-3xl font-semibold">{displayExerciseTitle(exercise.kind, exercise.title)}</h1>
       <p className="mt-2 text-sm text-white/65">Elige una propuesta y ajusta sólo lo que quieras practicar hoy.</p>
       <div className="mt-6 space-y-5">
         {exercise.kind === "ear_interval" && <fieldset><legend className="text-sm font-medium">Intervalos</legend><div className="mt-2 flex flex-wrap gap-2">{["m2", "M2", "m3", "M3", "P4", "P5", "P8"].map((item) => <button key={item} type="button" onClick={() => toggle(item, selectedIntervals, setSelectedIntervals)} className={`rounded-xl border px-3 py-2 text-sm ${selectedIntervals.includes(item) ? "border-cyan-300 bg-cyan-300/15" : "border-white/15"}`}>{locale === "es" ? intervalLabels[item] : englishIntervals[item]}</button>)}</div></fieldset>}
