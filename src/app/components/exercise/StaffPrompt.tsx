@@ -62,7 +62,22 @@ export function StaffPrompt({ notes, clef = "treble", variant = "default", onPla
 
     new Formatter().joinVoices([voice]).format([voice], width - 110);
     voice.draw(context, stave);
-  }, [clef, notes, separateNotes, variant]);
 
-  return <div ref={ref} role={onPlay ? "button" : undefined} tabIndex={onPlay ? 0 : undefined} onClick={() => onPlay?.(notes)} onKeyDown={(event) => { if (onPlay && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onPlay(notes); } }} aria-label={onPlay ? "Reproducir las notas del pentagrama" : undefined} className={`w-full overflow-hidden rounded-xl bg-[#101b33] ${onPlay ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-300/70" : ""}`} />;
+    if (onPlay) {
+      const renderedNotes = Array.from(host.querySelectorAll<SVGGElement>(".vf-stavenote"));
+      renderedNotes.forEach((element, index) => {
+        const playedNotes = separateNotes ? [notes[index]] : notes;
+        if (!playedNotes[0]) return;
+        element.style.cursor = "pointer";
+        element.setAttribute("role", "button");
+        element.setAttribute("tabindex", "0");
+        element.setAttribute("aria-label", `Reproducir nota ${index + 1}`);
+        const playThisNote = () => onPlay(playedNotes);
+        element.addEventListener("click", (event) => { event.stopPropagation(); playThisNote(); });
+        element.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); playThisNote(); } });
+      });
+    }
+  }, [clef, notes, onPlay, separateNotes, variant]);
+
+  return <div ref={ref} className="w-full overflow-hidden rounded-xl bg-[#101b33]" />;
 }

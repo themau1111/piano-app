@@ -9,7 +9,7 @@ import { TypingProvider } from "@/context/TypingContext";
 export const metadata: Metadata = {
   title: "MusicAula",
   description: "Aprende piano y teoría musical a tu ritmo.",
-  icons: { icon: "/favicon.ico" },
+  icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
 };
 
 export default function RootLayout({
