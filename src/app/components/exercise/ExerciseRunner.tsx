@@ -409,7 +409,7 @@ export function ExerciseRunner({
       <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
         <p className="mb-3 text-sm text-white/70">{run.presentation.instructions}</p>
         {run.presentation.staffNotes?.length ? (
-          <StaffPrompt notes={earIntervalStaffNotes ?? ((run.prompt.kind === "melodic_direction") && !run.feedback ? run.presentation.staffNotes.slice(0, 1) : run.presentation.staffNotes)} clef={run.presentation.clef ?? "treble"} variant={run.feedback ? (run.feedback.correct || run.status === "revealed" ? "selected" : "incorrect") : "default"} onPlay={(notes) => { void playEvents(notes.map((note) => ({ midi: note.midi, atMs: 0, durationMs: 900 }))).catch(() => setAudioError(true)); }} />
+          <StaffPrompt notes={earIntervalStaffNotes ?? ((run.prompt.kind === "melodic_direction") && !run.feedback ? run.presentation.staffNotes.slice(0, 1) : run.presentation.staffNotes)} clef={run.presentation.clef ?? "treble"} separateNotes={run.prompt.kind === "ear_interval" || run.prompt.kind === "melodic_direction"} variant={run.feedback ? (run.feedback.correct || run.status === "revealed" ? "selected" : "incorrect") : "default"} onPlay={(notes) => { void playEvents(notes.map((note, index) => ({ midi: note.midi, atMs: index * 550, durationMs: 500 }))).catch(() => setAudioError(true)); }} />
         ) : showSelectionOnStaff && displayedStaffNotes.length ? (
           <StaffPrompt notes={displayedStaffNotes} clef="treble" variant={run.feedback && !run.feedback.correct ? "incorrect" : "selected"} onPlay={(notes) => { void playEvents(notes.map((note) => ({ midi: note.midi, atMs: 0, durationMs: 900 }))).catch(() => setAudioError(true)); }} />
         ) : null}

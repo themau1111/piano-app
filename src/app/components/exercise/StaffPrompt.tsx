@@ -16,7 +16,7 @@ function midiToVexKey(midi: number) {
   };
 }
 
-export function StaffPrompt({ notes, clef = "treble", variant = "default", onPlay }: { notes: StaffRenderNote[]; clef?: "treble"; variant?: "default" | "incorrect" | "selected"; onPlay?: (notes: StaffRenderNote[]) => void }) {
+export function StaffPrompt({ notes, clef = "treble", variant = "default", onPlay, separateNotes = false }: { notes: StaffRenderNote[]; clef?: "treble"; variant?: "default" | "incorrect" | "selected"; onPlay?: (notes: StaffRenderNote[]) => void; separateNotes?: boolean }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -41,26 +41,28 @@ export function StaffPrompt({ notes, clef = "treble", variant = "default", onPla
     stave.draw();
 
     const keys = notes.map((item) => midiToVexKey(item.midi));
-    const note = new StaveNote({
-      clef,
-      keys: keys.map((item) => item.key),
-      duration: "q",
-    });
-    if (variant === "incorrect") note.setStyle({ fillStyle: "#fb7185", strokeStyle: "#fb7185" });
-    if (variant === "selected") note.setStyle({ fillStyle: "#4ade80", strokeStyle: "#4ade80" });
+    const staveNotes = separateNotes
+      ? keys.map((item, index) => {
+          const note = new StaveNote({ clef, keys: [item.key], duration: "q" });
+          if (index > 0 && variant === "incorrect") note.setStyle({ fillStyle: "#fb7185", strokeStyle: "#fb7185" });
+          if (index > 0 && variant === "selected") note.setStyle({ fillStyle: "#4ade80", strokeStyle: "#4ade80" });
+          if (item.accidental) note.addModifier(new Accidental(item.accidental), 0);
+          return note;
+        })
+      : [(() => {
+          const note = new StaveNote({ clef, keys: keys.map((item) => item.key), duration: "q" });
+          if (variant === "incorrect") note.setStyle({ fillStyle: "#fb7185", strokeStyle: "#fb7185" });
+          if (variant === "selected") note.setStyle({ fillStyle: "#4ade80", strokeStyle: "#4ade80" });
+          keys.forEach((item, index) => { if (item.accidental) note.addModifier(new Accidental(item.accidental), index); });
+          return note;
+        })()];
 
-    keys.forEach((item, index) => {
-      if (item.accidental) {
-        note.addModifier(new Accidental(item.accidental), index);
-      }
-    });
-
-    const voice = new Voice({ numBeats: 1, beatValue: 4 });
-    voice.addTickables([note]);
+    const voice = new Voice({ numBeats: staveNotes.length, beatValue: 4 });
+    voice.addTickables(staveNotes);
 
     new Formatter().joinVoices([voice]).format([voice], width - 110);
     voice.draw(context, stave);
-  }, [clef, notes, variant]);
+  }, [clef, notes, separateNotes, variant]);
 
   return <div ref={ref} role={onPlay ? "button" : undefined} tabIndex={onPlay ? 0 : undefined} onClick={() => onPlay?.(notes)} onKeyDown={(event) => { if (onPlay && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onPlay(notes); } }} aria-label={onPlay ? "Reproducir las notas del pentagrama" : undefined} className={`w-full overflow-hidden rounded-xl bg-[#101b33] ${onPlay ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-300/70" : ""}`} />;
 }
