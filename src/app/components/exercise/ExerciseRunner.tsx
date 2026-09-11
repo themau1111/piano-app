@@ -39,6 +39,15 @@ function normalizeSelection(selection: Set<number>) {
 
 const intervalSemitones: Record<string, number> = { m2: 1, M2: 2, m3: 3, M3: 4, P4: 5, TT: 6, P5: 7, m6: 8, M6: 9, m7: 10, M7: 11, P8: 12 };
 
+function exerciseTitle(kind: ExerciseDetail["kind"], fallback: string) {
+  const titles: Partial<Record<ExerciseDetail["kind"], string>> = {
+    ear_interval: "Intervalos simples",
+    scale_construction: "Escalas",
+    chord_identification: "Acordes",
+  };
+  return titles[kind] ?? fallback;
+}
+
 export function ExerciseRunner({
   exercise,
   preferences,
@@ -396,7 +405,7 @@ export function ExerciseRunner({
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-300/70">{practice ? "Práctica libre" : "Reto guiado"}</p>
-          <h2 className="text-2xl font-semibold">{run.exercise.title}</h2>
+          <h2 className="text-2xl font-semibold">{exerciseTitle(run.exercise.kind, run.exercise.title)}</h2>
           <p className="mt-2 text-sm text-white/70">{run.prompt.text}</p>
           <p className="mt-1 text-xs text-white/50">
             {practice ? "Configura, prueba y ajusta a tu ritmo." : `${preferences?.practice?.minutesPerDay ?? 20} min diarios · ${mode === "guest" ? "progreso guardado en este dispositivo" : "progreso guardado en tu perfil"}`}

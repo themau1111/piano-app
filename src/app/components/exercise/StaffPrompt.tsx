@@ -69,12 +69,8 @@ export function StaffPrompt({ notes, clef = "treble", variant = "default", onPla
         const playedNotes = separateNotes ? [notes[index]] : notes;
         if (!playedNotes[0]) return;
         element.style.cursor = "pointer";
-        element.setAttribute("role", "button");
-        element.setAttribute("tabindex", "0");
-        element.setAttribute("aria-label", `Reproducir nota ${index + 1}`);
         const playThisNote = () => onPlay(playedNotes);
         element.addEventListener("click", (event) => { event.stopPropagation(); playThisNote(); });
-        element.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); playThisNote(); } });
       });
     }
   }, [clef, notes, onPlay, separateNotes, variant]);
