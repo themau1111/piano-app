@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import * as Tone from "tone";
 import type { ExerciseDetail } from "@/lib/exercises/contracts";
 import type { NotationLocale } from "@/app/hooks/useNotationLocale";
 
@@ -52,7 +53,7 @@ export function PracticeConfigurator({ exercise, locale, renderRunner }: { exerc
         {["ear_interval", "scale_construction", "chord_identification"].includes(exercise.kind) && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={showStaff} onChange={(event) => setShowStaff(event.target.checked)} /> Mostrar pentagrama como ayuda visual</label>}
         <div className="grid gap-4 sm:grid-cols-3"><label className="text-sm">Ejercicios<select value={count} onChange={(event) => setCount(Number(event.target.value))} className="mt-2 block w-full rounded-xl border border-white/15 bg-slate-900 px-3 py-2">{[5, 10, 15, 20].map((value) => <option key={value} value={value}>{value} ejercicios</option>)}</select></label><label className="text-sm">Intentos por ejercicio<select value={attemptsAllowed} onChange={(event) => setAttemptsAllowed(Number(event.target.value))} className="mt-2 block w-full rounded-xl border border-white/15 bg-slate-900 px-3 py-2"><option value={1}>1</option><option value={3}>3</option><option value={99}>Sin límite</option></select></label><label className="text-sm"><span className="flex items-center gap-2"><input type="checkbox" checked={timed} onChange={(event) => setTimed(event.target.checked)} /> Tiempo por ejercicio</span>{timed && <input type="number" min="5" max="600" value={seconds} onChange={(event) => setSeconds(Number(event.target.value))} className="mt-2 block w-full rounded-xl border border-white/15 bg-slate-900 px-3 py-2" />}</label></div>
       </div>
-      <button type="button" onClick={() => setStarted(true)} className="mt-7 rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-medium text-slate-950">Empezar práctica</button>
+      <button type="button" onClick={() => { void Tone.start().finally(() => setStarted(true)); }} className="mt-7 rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-medium text-slate-950">Empezar práctica</button>
     </section>
   </main>;
 }
