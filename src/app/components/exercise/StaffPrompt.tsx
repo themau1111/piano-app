@@ -24,6 +24,7 @@ export function StaffPrompt({ notes, clef = "treble", variant = "default" }: { n
     if (!host) return;
 
     host.innerHTML = "";
+    if (!notes.length) return;
     const width = Math.max(host.clientWidth || 420, 320);
     const height = 160;
 
@@ -46,7 +47,7 @@ export function StaffPrompt({ notes, clef = "treble", variant = "default" }: { n
       duration: "q",
     });
     if (variant === "incorrect") note.setStyle({ fillStyle: "#fb7185", strokeStyle: "#fb7185" });
-    if (variant === "selected") note.setStyle({ fillStyle: "#67e8f9", strokeStyle: "#67e8f9" });
+    if (variant === "selected") note.setStyle({ fillStyle: "#4ade80", strokeStyle: "#4ade80" });
 
     keys.forEach((item, index) => {
       if (item.accidental) {

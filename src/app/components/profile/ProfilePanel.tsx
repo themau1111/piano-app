@@ -4,7 +4,7 @@ import { Fragment, useMemo } from "react";
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
 import { Avatar } from "../ui/Avatar";
 import { useQuery } from "@tanstack/react-query";
-import { getMyPreferences } from "../../../lib/api/api";
+import { getMyPreferences, getMyProgress } from "../../../lib/api/api";
 import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 import type { Prefs } from "@/lib/prefs";
 
@@ -15,6 +15,7 @@ export function ProfilePanel({ open, onClose, onSignOut }: { open: boolean; onCl
     queryFn: getMyPreferences,
     enabled: open,
   });
+  const { data: progress } = useQuery({ queryKey: ["profile-progress", open], queryFn: getMyProgress, enabled: open });
   const profilePrefs = useMemo(() => {
     if (!prefs) return null;
     return prefs as Partial<Prefs> & { instrument?: string };
@@ -70,6 +71,15 @@ export function ProfilePanel({ open, onClose, onSignOut }: { open: boolean; onCl
                   </nav>
 
                   <div className="border-t border-white/10 pt-4">
+                    <h3 className="text-sm font-medium mb-3 text-white/80">Tu práctica</h3>
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <Metric label="Hechos" value={String(progress?.summary?.attempted ?? 0)} />
+                      <Metric label="Dominados" value={String(progress?.summary?.mastered ?? 0)} />
+                      <Metric label="Acierto" value={`${Math.round((progress?.summary?.accuracy ?? 0) * 100)}%`} />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-white/10 pt-4">
                     <h3 className="text-sm font-medium mb-3 text-white/80">Resumen de preferencias</h3>
                     {profilePrefs ? (
                       <ul className="space-y-2 text-sm">
@@ -110,4 +120,8 @@ function Li({ label, value }: { label: string; value: string }) {
       <span className="text-white/90 truncate">{value}</span>
     </li>
   );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-lg bg-white/5 p-2"><div className="text-base font-semibold text-cyan-100">{value}</div><div className="mt-1 text-white/55">{label}</div></div>;
 }

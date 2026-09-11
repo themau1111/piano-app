@@ -1,41 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { fetchSections, getMyProgress, getPracticeQueue } from "@/lib/api/api";
-import type { PracticeQueueItem } from "@/lib/exercises/contracts";
-import { useCurrentUser } from "./hooks/useCurrentUser";
-import { Card } from "./components/ui/Card";
 import { HomeHeroPiano } from "./components/home/HomeHeroPiano";
 import { IntervalBranchMap } from "./components/home/IntervalBranchMap";
 import { useEffect, useRef, useState } from "react";
-import { getLocalProgressSummary } from "@/lib/progress-local";
 import * as Tone from "tone";
 
 export default function HomePage() {
-  const { data: user } = useCurrentUser();
-  const { data: sections } = useQuery({
-    queryKey: ["sections"],
-    queryFn: fetchSections,
-  });
-  const { data: queue } = useQuery({
-    queryKey: ["practiceQueue"],
-    queryFn: getPracticeQueue,
-    enabled: !!user,
-  });
-  const { data: progress } = useQuery({
-    queryKey: ["progress"],
-    queryFn: getMyProgress,
-    enabled: !!user,
-  });
-  const [guestProgress, setGuestProgress] = useState({ attempted: 0, mastered: 0, accuracy: 0 });
   const [activeHeroNotes, setActiveHeroNotes] = useState<Set<number>>(new Set());
   const [lastPlayedNotes, setLastPlayedNotes] = useState<string[]>([]);
   const previousHeroNoteCount = useRef(0);
-
-  useEffect(() => {
-    if (!user) setGuestProgress(getLocalProgressSummary());
-  }, [user]);
 
   useEffect(() => {
     const isAddingNotes = activeHeroNotes.size > previousHeroNoteCount.current;
@@ -47,8 +21,6 @@ export default function HomePage() {
         .map((midi) => Tone.Frequency(midi, "midi").toNote()),
     );
   }, [activeHeroNotes]);
-
-  const progressSummary = user ? progress?.summary : guestProgress;
 
   return (
     <main className="min-h-[calc(100vh-3.5rem)] overflow-hidden bg-[radial-gradient(circle_at_72%_20%,#1b4f7c_0%,#102544_26%,#070c18_68%)] px-4 py-6 text-white sm:py-10">
@@ -63,20 +35,9 @@ export default function HomePage() {
               Explora, escucha y practica a tu ritmo. Empieza sin cuenta; crea un perfil sólo cuando quieras guardar tu camino.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              {queue?.currentTopic ? (
-                <Link
-                  href={`/sections/${queue.currentTopic.sectionCode}/${queue.currentTopic.code}`}
-                  className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-medium text-slate-950"
-                >
-                  Continuar: {queue.currentTopic.title}
-                </Link>
-              ) : (
-                <Link href="/sections/basic" className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-medium text-slate-950">
-                  Continuar ruta
-                </Link>
-              )}
+              <Link href="/sections/basic" className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-medium text-slate-950">Continuar ruta</Link>
               <Link href="/practice" className="rounded-2xl border border-white/15 px-5 py-3 text-sm font-medium text-white/80 hover:bg-white/5">
-                Práctica libre
+                Ejercicios
               </Link>
             </div>
           </div>
@@ -88,132 +49,8 @@ export default function HomePage() {
           />
         </section>
 
-        {lastPlayedNotes.length >= 2 ? (
-          <IntervalBranchMap notes={lastPlayedNotes} />
-        ) : (
-          <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          {user && (
-            <Card title="Cola de práctica">
-              {!queue?.items?.length ? (
-                <p className="text-sm text-white/70">Todavía no hay tareas en cola. Inicia una sección para generar tu primera rutina.</p>
-              ) : (
-                <div className="space-y-3">
-                  {queue.items.map((item) => (
-                    <Link
-                      key={`${item.exerciseId}-${item.reason}`}
-                      href={`/sections/${item.sectionCode}/${item.topicCode}/exercise/${item.exerciseId}`}
-                      className="block rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.2em] text-cyan-300/70">{item.reason}</p>
-                          <h3 className="mt-1 font-medium">{item.title}</h3>
-                          <p className="mt-1 text-sm text-white/60">{item.topicTitle} · nivel {item.levelIndex}</p>
-                          <p className="mt-2 text-sm leading-5 text-cyan-50/80">{practiceReason(item)}</p>
-                        </div>
-                        <div className="text-right text-xs text-white/60">
-                          <div>Intentos: {item.stats?.attempts ?? 0}</div>
-                          <div>Racha: {item.stats?.streak ?? 0}</div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </Card>
-          )}
-
-            <Card className={user ? undefined : "lg:col-span-2"} title={user ? "Progreso general" : "Tu práctica en este dispositivo"}>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <Stat label="Ejercicios intentados" value={String(progressSummary?.attempted ?? 0)} />
-                <Stat label="Dominadas" value={String(progressSummary?.mastered ?? 0)} />
-                <Stat label="Precisión" value={`${Math.round((progressSummary?.accuracy ?? 0) * 100)}%`} />
-              </div>
-              <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                {user ? `Meta sugerida hoy: ${queue?.dailyGoalMinutes ?? 20} minutos.` : "Tu avance se conserva localmente. Inicia sesión cuando quieras asociarlo a un perfil."}
-              </div>
-            </Card>
-          </section>
-        )}
-
-        {user && progress?.items?.length ? (
-          <Card title="Progreso por habilidad">
-            <p className="text-sm leading-6 text-white/70">
-              Este estado usa intentos, precisión y racha según el criterio de cada actividad.
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {progress.items.map((item) => (
-                <div key={item.exerciseId} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-cyan-300/70">{item.skillCode}</p>
-                      <h3 className="mt-1 font-medium">{item.title}</h3>
-                    </div>
-                    <LearningStateBadge state={item.learningState} />
-                  </div>
-                  <p className="mt-2 text-sm text-white/60">
-                    {item.stats?.attempts ?? 0} intentos · {Math.round(((item.stats?.correct ?? 0) / Math.max(item.stats?.attempts ?? 0, 1)) * 100)}% precisión
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Card>
-        ) : null}
-
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {(sections ?? []).map((section) => (
-            <Link key={section.id} href={`/sections/${section.code}`} className="block rounded-[24px] border border-white/10 bg-white/5 p-5 transition hover:-translate-y-0.5 hover:bg-white/10">
-              <p className="text-xs uppercase tracking-[0.24em] text-white/45">{section.code}</p>
-              <h2 className="mt-2 text-xl font-semibold">{section.title}</h2>
-              <p className="mt-2 text-sm leading-6 text-white/65">{section.description || "Ruta disponible para estudio guiado."}</p>
-            </Link>
-          ))}
-        </section>
+        {lastPlayedNotes.length >= 2 && <IntervalBranchMap notes={lastPlayedNotes} />}
       </div>
     </main>
-  );
-}
-
-function LearningStateBadge({ state }: { state: "practiced" | "in_progress" | "mastered" }) {
-  const labels = {
-    practiced: "Practicado",
-    in_progress: "En progreso",
-    mastered: "Dominado",
-  } as const;
-  const colors = {
-    practiced: "border-white/15 bg-white/5 text-white/75",
-    in_progress: "border-amber-300/30 bg-amber-300/10 text-amber-100",
-    mastered: "border-emerald-300/30 bg-emerald-300/10 text-emerald-100",
-  } as const;
-
-  return <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${colors[state]}`}>{labels[state]}</span>;
-}
-
-function practiceReason(item: PracticeQueueItem) {
-  if (item.explanation) {
-    return item.explanation;
-  }
-
-  if (item.reason === "new") {
-    return "Es una actividad nueva de tu tema actual.";
-  }
-
-  if (item.reason === "current") {
-    return "La proponemos para continuar practicando esta habilidad.";
-  }
-
-  if (item.stats?.weakTags.length) {
-    return "La proponemos para repasar una dificultad detectada en intentos anteriores.";
-  }
-
-  return "La proponemos porque ya toca retomar esta práctica.";
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <div className="text-xs uppercase tracking-[0.18em] text-white/45">{label}</div>
-      <div className="mt-2 text-2xl font-semibold">{value}</div>
-    </div>
   );
 }

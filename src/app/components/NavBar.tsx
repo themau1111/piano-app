@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "./ui/Button";
-import { fetchSections, fetchTopicsAllBySectionCode } from "../../lib/api/api";
+import { fetchPracticePresets, fetchSections, fetchTopicsAllBySectionCode } from "../../lib/api/api";
 import { useAuth } from "../../lib/auth-store";
 import { cn } from "../../lib/cn";
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -21,6 +21,7 @@ export default function Navbar() {
 
   const { data: sections } = useQuery({ queryKey: ["sections"], queryFn: fetchSections });
   const { data: topicsMap } = useQuery({ queryKey: ["topicsBySection"], queryFn: fetchTopicsAllBySectionCode });
+  const { data: practicePresets } = useQuery({ queryKey: ["practicePresets"], queryFn: fetchPracticePresets });
 
   const { mode, signOut } = useAuth();
   const { data: user } = useCurrentUser();
@@ -93,7 +94,10 @@ export default function Navbar() {
 
           {/* Sections (desktop) → click para desplegar */}
           <nav className="hidden md:flex items-center gap-1">
-            <Link href="/practice" className={cn("rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-white", pathname.startsWith("/practice") && "bg-white/10 text-white")}>Práctica libre</Link>
+            <div className="relative">
+              <button type="button" onClick={() => setNavUi((prev) => ({ ...prev, openDesktopSection: prev.openDesktopSection === "__practice" ? null : "__practice" }))} aria-expanded={openDesktopSection === "__practice"} className={cn("inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-white", pathname.startsWith("/practice") && "bg-white/10 text-white")}>Ejercicios <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" /></svg></button>
+              {openDesktopSection === "__practice" && <div className="absolute left-0 mt-2 min-w-[240px] rounded-xl border border-white/10 bg-[#0b1325] p-2 shadow-lg"><Link href="/practice" className="block rounded-lg px-3 py-2 text-sm text-cyan-100 hover:bg-white/5">Ver todos los ejercicios</Link>{(practicePresets ?? []).map((preset) => <Link key={preset.exerciseId} href={`/practice/${preset.exerciseId}`} className="block rounded-lg px-3 py-2 text-sm text-white/75 hover:bg-white/5">{preset.title}</Link>)}</div>}
+            </div>
             {(sections ?? []).map((s: any) => {
               const topics = topicsMap?.[s.code] ?? [];
               const isSectionActive = currentSection === s.code;
@@ -193,7 +197,10 @@ export default function Navbar() {
               >
                 Inicio
               </Link>
-              <Link href="/practice" onClick={() => setNavUi((prev) => ({ ...prev, mobileOpen: false, mobileOpenSection: null }))} className={cn("mb-2 block rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/5", pathname.startsWith("/practice") && "bg-white/10 text-white")}>Práctica libre</Link>
+              <div className="mb-2 rounded-lg border border-white/10">
+                <Link href="/practice" onClick={() => setNavUi((prev) => ({ ...prev, mobileOpen: false, mobileOpenSection: null }))} className={cn("block px-3 py-2 text-sm text-white/80 hover:bg-white/5", pathname.startsWith("/practice") && "bg-white/10 text-white")}>Ejercicios</Link>
+                <div className="border-t border-white/10 py-1">{(practicePresets ?? []).map((preset) => <Link key={preset.exerciseId} href={`/practice/${preset.exerciseId}`} onClick={() => setNavUi((prev) => ({ ...prev, mobileOpen: false, mobileOpenSection: null }))} className="block px-5 py-2 text-sm text-white/65 hover:bg-white/5">{preset.title}</Link>)}</div>
+              </div>
               {!sections?.length && <p className="px-3 py-2 text-sm text-white/50">Cargando rutas de aprendizaje…</p>}
               {(sections ?? []).map((s: any) => {
                 const topics = topicsMap?.[s.code] ?? [];
