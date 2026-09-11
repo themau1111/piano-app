@@ -8,27 +8,48 @@ import type { KeyboardPreferences } from "@/app/hooks/useKeyboardPreferences";
 export function KeyboardControls({ preferences, onChange }: { preferences: KeyboardPreferences; onChange: (next: Partial<KeyboardPreferences>) => void }) {
   const [running, setRunning] = useState(false);
   const [beat, setBeat] = useState(1);
-  const click = useRef<Tone.Synth | null>(null);
-  useEffect(() => () => { click.current?.dispose(); }, []);
+  const click = useRef<Tone.MembraneSynth | null>(null);
+  const beatRef = useRef(1);
+  const scheduleId = useRef<number | null>(null);
+  const makeClick = () => (click.current ??= new Tone.MembraneSynth({
+    pitchDecay: 0.003,
+    octaves: 0.5,
+    envelope: { attack: 0.001, decay: 0.06, sustain: 0, release: 0.01 },
+    volume: -20,
+  }).toDestination());
+
+  useEffect(() => () => {
+    if (scheduleId.current != null) Tone.Transport.clear(scheduleId.current);
+    click.current?.dispose();
+  }, []);
+
   useEffect(() => {
-    if (!running) return;
-    const timer = window.setInterval(() => {
-      setBeat((current) => {
-        const next = current === preferences.meter ? 1 : current + 1;
-        click.current ??= new Tone.Synth({ volume: -16 }).toDestination();
-        click.current.triggerAttackRelease(current === 1 ? "C6" : "C5", "32n");
-        return next;
-      });
-    }, 60_000 / preferences.tempo);
-    return () => window.clearInterval(timer);
-  }, [preferences.meter, preferences.tempo, running]);
+    Tone.Transport.bpm.value = preferences.tempo;
+  }, [preferences.tempo]);
 
   async function toggleMetronome() {
+    if (running) {
+      Tone.Transport.stop();
+      if (scheduleId.current != null) Tone.Transport.clear(scheduleId.current);
+      scheduleId.current = null;
+      setRunning(false);
+      return;
+    }
     await Tone.start();
-    click.current ??= new Tone.Synth({ volume: -16 }).toDestination();
-    if (!running) click.current.triggerAttackRelease("C6", "32n");
+    const metronome = makeClick();
+    beatRef.current = 1;
     setBeat(1);
-    setRunning((value) => !value);
+    Tone.Transport.stop();
+    Tone.Transport.cancel(0);
+    Tone.Transport.bpm.value = preferences.tempo;
+    scheduleId.current = Tone.Transport.scheduleRepeat((time) => {
+      const current = beatRef.current;
+      metronome.triggerAttackRelease(current === 1 ? "C4" : "C3", "32n", time);
+      Tone.getDraw().schedule(() => setBeat(current), time);
+      beatRef.current = current === preferences.meter ? 1 : current + 1;
+    }, "4n");
+    Tone.Transport.start("+0.05");
+    setRunning(true);
   }
 
   return (

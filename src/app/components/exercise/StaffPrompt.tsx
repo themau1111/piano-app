@@ -16,7 +16,7 @@ function midiToVexKey(midi: number) {
   };
 }
 
-export function StaffPrompt({ notes, clef = "treble", variant = "default" }: { notes: StaffRenderNote[]; clef?: "treble"; variant?: "default" | "incorrect" | "selected" }) {
+export function StaffPrompt({ notes, clef = "treble", variant = "default", onPlay }: { notes: StaffRenderNote[]; clef?: "treble"; variant?: "default" | "incorrect" | "selected"; onPlay?: (notes: StaffRenderNote[]) => void }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -62,5 +62,5 @@ export function StaffPrompt({ notes, clef = "treble", variant = "default" }: { n
     voice.draw(context, stave);
   }, [clef, notes, variant]);
 
-  return <div ref={ref} className="w-full overflow-hidden rounded-xl bg-[#101b33]" />;
+  return <div ref={ref} role={onPlay ? "button" : undefined} tabIndex={onPlay ? 0 : undefined} onClick={() => onPlay?.(notes)} onKeyDown={(event) => { if (onPlay && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onPlay(notes); } }} aria-label={onPlay ? "Reproducir las notas del pentagrama" : undefined} className={`w-full overflow-hidden rounded-xl bg-[#101b33] ${onPlay ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-300/70" : ""}`} />;
 }

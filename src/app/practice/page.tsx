@@ -29,7 +29,7 @@ export default function PracticePage() {
     </section>
     {isLoading ? <p className="mt-6 text-white/70">Cargando prácticas…</p> : <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {Array.from(byKind.entries()).map(([kind, preset]) => <Link key={kind} href={`/practice/${preset.exerciseId}`} className="rounded-[24px] border border-white/10 bg-white/5 p-5 transition hover:-translate-y-0.5 hover:bg-white/10">
-        <p className="text-xs uppercase tracking-[.18em] text-cyan-200/70">{preset.title}</p>
+        <p className="text-xs uppercase tracking-[.18em] text-cyan-200/70">Ejercicio configurable</p>
         <h2 className="mt-2 text-xl font-medium">{labels[kind].title}</h2>
         <p className="mt-2 text-sm leading-6 text-white/65">{labels[kind].description}</p>
         <span className="mt-4 inline-flex text-sm font-medium text-cyan-200">Configurar práctica →</span>

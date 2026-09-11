@@ -37,6 +37,8 @@ function normalizeSelection(selection: Set<number>) {
   return Array.from(selection).sort((left, right) => left - right);
 }
 
+const intervalSemitones: Record<string, number> = { m2: 1, M2: 2, m3: 3, M3: 4, P4: 5, TT: 6, P5: 7, m6: 8, M6: 9, m7: 10, M7: 11, P8: 12 };
+
 export function ExerciseRunner({
   exercise,
   preferences,
@@ -287,6 +289,7 @@ export function ExerciseRunner({
     if (practice && sessionId) {
       setWorking(true);
       try {
+        await Tone.start();
         const next = await nextPracticeSessionRun(sessionId);
         setRun(next);
         setSelected(new Set());
@@ -295,6 +298,7 @@ export function ExerciseRunner({
         setDirectionChoice("");
         setPulseChoice(null);
         setBeatCountChoice(null);
+        autoReplay(next);
       } catch {
         setLoadError(true);
       } finally {
@@ -349,6 +353,15 @@ export function ExerciseRunner({
   const isKeyboardNote = run?.prompt.kind === "keyboard_note";
   const showSelectionOnStaff = run?.prompt.kind === "scale_construction" || run?.prompt.kind === "chord_identification" || isKeyboardNote;
   const displayedStaffNotes = isKeyboardNote && selectedStaffNotes.length ? selectedStaffNotes.slice(-1) : selectedStaffNotes;
+  const earIntervalStaffNotes = (() => {
+    if (!run || run.prompt.kind !== "ear_interval" || !run.presentation.staffNotes?.length) return null;
+    const [first, correctSecond] = run.presentation.staffNotes;
+    if (!first || !correctSecond || !intervalChoice) return run.feedback ? run.presentation.staffNotes : [first];
+    const semitones = intervalSemitones[intervalChoice] ?? 0;
+    const direction = correctSecond.midi >= first.midi ? 1 : -1;
+    return [first, { midi: first.midi + direction * semitones }];
+  })();
+  const attemptsLabel = (run?.attemptsLeft ?? 0) >= 2_147_483_647 ? "Sin límite" : String(run?.attemptsLeft ?? 0);
   const revealLabel = run?.feedback?.reveal?.label;
   const nextStep = run?.feedback?.nextStep
     ? `Paso siguiente: ${run.feedback.nextStep}`
@@ -390,15 +403,15 @@ export function ExerciseRunner({
           </p>
         </div>
         {secondsLeft != null && <div className="rounded-2xl border border-amber-200/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-50">{secondsLeft}s por responder</div>}
-        {practice?.questionLimit && <div className="rounded-2xl border border-cyan-200/25 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-50">Ejercicio {Math.min(completedExercises + 1, practice.questionLimit)} de {practice.questionLimit}</div>}
+        {practice?.questionLimit && <div className="space-y-1 rounded-2xl border border-cyan-200/25 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-50"><div>Ejercicio {Math.min(completedExercises + 1, practice.questionLimit)} de {practice.questionLimit}</div><div className="text-xs text-cyan-50/75">Intentos restantes: {attemptsLabel}</div></div>}
       </header>
 
       <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
         <p className="mb-3 text-sm text-white/70">{run.presentation.instructions}</p>
         {run.presentation.staffNotes?.length ? (
-          <StaffPrompt notes={(run.prompt.kind === "ear_interval" || run.prompt.kind === "melodic_direction") && !run.feedback ? run.presentation.staffNotes.slice(0, 1) : run.presentation.staffNotes} clef={run.presentation.clef ?? "treble"} variant={run.feedback ? (run.feedback.correct || run.status === "revealed" ? "selected" : "incorrect") : "default"} />
+          <StaffPrompt notes={earIntervalStaffNotes ?? ((run.prompt.kind === "melodic_direction") && !run.feedback ? run.presentation.staffNotes.slice(0, 1) : run.presentation.staffNotes)} clef={run.presentation.clef ?? "treble"} variant={run.feedback ? (run.feedback.correct || run.status === "revealed" ? "selected" : "incorrect") : "default"} onPlay={(notes) => { void playEvents(notes.map((note) => ({ midi: note.midi, atMs: 0, durationMs: 900 }))).catch(() => setAudioError(true)); }} />
         ) : showSelectionOnStaff && displayedStaffNotes.length ? (
-          <StaffPrompt notes={displayedStaffNotes} clef="treble" variant={run.feedback && !run.feedback.correct ? "incorrect" : "selected"} />
+          <StaffPrompt notes={displayedStaffNotes} clef="treble" variant={run.feedback && !run.feedback.correct ? "incorrect" : "selected"} onPlay={(notes) => { void playEvents(notes.map((note) => ({ midi: note.midi, atMs: 0, durationMs: 900 }))).catch(() => setAudioError(true)); }} />
         ) : null}
       </div>
 
@@ -551,7 +564,7 @@ export function ExerciseRunner({
         <div className="space-y-4 rounded-2xl border border-white/10 bg-black/20 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-white/70">
             {!isKeyboardNote && <span>Selección: {selectedLabels.join(", ") || "ninguna"}</span>}
-            <button type="button" onClick={() => setShowKeyboardControls((shown) => !shown)} className="rounded-lg border border-white/15 px-2 py-1 text-xs hover:bg-white/10" aria-label="Opciones de teclado">⚙</button>
+            <button type="button" onClick={() => setShowKeyboardControls((shown) => !shown)} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 text-xl hover:bg-white/10" aria-label="Opciones de teclado">⚙</button>
           </div>
           {showKeyboardControls && <KeyboardControls preferences={keyboardPreferences} onChange={updateKeyboardPreferences} />}
           <div className="h-44 w-full sm:h-52">
