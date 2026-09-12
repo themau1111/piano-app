@@ -14,7 +14,7 @@ const STORAGE_KEY = "musicaula:keyboard-preferences";
 const defaults: KeyboardPreferences = {
   showLabels: false,
   visibleOctaves: 2,
-  startMidi: 48,
+  startMidi: 60,
   meter: 4,
   tempo: 72,
 };
