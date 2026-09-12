@@ -391,6 +391,7 @@ export function ExerciseRunner({
       : {}),
   }));
   const isKeyboardNote = run?.prompt.kind === "keyboard_note";
+  const keyboardTargetLabel = run?.prompt.kind === "keyboard_note" ? run.prompt.targetLabel.replace(/[0-9-]/g, "") : null;
   const showSelectionOnStaff = run?.prompt.kind === "scale_construction" || run?.prompt.kind === "chord_identification" || isKeyboardNote;
   const displayedStaffNotes = isKeyboardNote && selectedStaffNotes.length ? selectedStaffNotes.slice(-1) : selectedStaffNotes;
   const earIntervalStaffNotes = (() => {
@@ -433,17 +434,20 @@ export function ExerciseRunner({
   return (
     <section className="space-y-5 rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(16,27,51,0.95),rgba(7,13,26,0.95))] p-5 text-white shadow-2xl">
       {audioError && <p role="alert">No se pudo reproducir el audio. Comprueba tu conexión y pulsa Reproducir para intentarlo de nuevo.</p>}
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <header className={cn("grid gap-3", isKeyboardNote ? "sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center" : "sm:flex sm:items-start sm:justify-between")}>
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-300/70">{practice ? "Práctica libre" : "Reto guiado"}</p>
           <h2 className="text-2xl font-semibold">{displayExerciseTitle(run.exercise.kind, run.exercise.title)}</h2>
-          <p className="mt-2 text-sm text-white/70">{run.prompt.text}</p>
+          {!isKeyboardNote && <p className="mt-2 text-sm text-white/70">{run.prompt.text}</p>}
           <p className="mt-1 text-xs text-white/50">
             {practice ? practiceConfigurationSummary(run.exercise.kind, practice.config) : `${preferences?.practice?.minutesPerDay ?? 20} min diarios · ${mode === "guest" ? "progreso guardado en este dispositivo" : "progreso guardado en tu perfil"}`}
           </p>
         </div>
-        {secondsLeft != null && <div className="rounded-2xl border border-amber-200/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-50">{secondsLeft}s por responder</div>}
-        {practice?.questionLimit && <div className="space-y-1 rounded-2xl border border-cyan-200/25 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-50"><div>Ejercicio {Math.min(completedExercises + 1, practice.questionLimit)} de {practice.questionLimit}</div><div className="text-xs text-cyan-50/75">Intentos restantes: {attemptsLabel}</div></div>}
+        {keyboardTargetLabel && <div className="text-center" aria-label={`Nota solicitada: ${keyboardTargetLabel}`}><p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">Nota solicitada</p><p className="mt-1 text-5xl font-semibold leading-none text-cyan-50">{keyboardTargetLabel}</p></div>}
+        <div className={cn("flex flex-wrap gap-3", isKeyboardNote && "sm:justify-self-end")}>
+          {secondsLeft != null && <div className="rounded-2xl border border-amber-200/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-50">{secondsLeft}s por responder</div>}
+          {practice?.questionLimit && <div className="space-y-1 rounded-2xl border border-cyan-200/25 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-50"><div>Ejercicio {Math.min(completedExercises + 1, practice.questionLimit)} de {practice.questionLimit}</div><div className="text-xs text-cyan-50/75">Intentos restantes: {attemptsLabel}</div></div>}
+        </div>
       </header>
 
       <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
@@ -451,7 +455,7 @@ export function ExerciseRunner({
         {run.presentation.staffNotes?.length ? (
           <StaffPrompt notes={earIntervalStaffNotes ?? ((run.prompt.kind === "melodic_direction") && !run.feedback ? run.presentation.staffNotes.slice(0, 1) : run.presentation.staffNotes)} clef={run.presentation.clef ?? "treble"} separateNotes={run.prompt.kind === "ear_interval" || run.prompt.kind === "melodic_direction"} variant={run.feedback ? (run.feedback.correct || run.status === "revealed" ? "selected" : "incorrect") : "default"} onPlay={(notes) => { void playEvents(notes.map((note, index) => ({ midi: note.midi, atMs: index * 550, durationMs: 500 }))).catch(() => setAudioError(true)); }} />
         ) : showSelectionOnStaff && displayedStaffNotes.length ? (
-          <StaffPrompt notes={displayedStaffNotes} clef="treble" separateNotes={run.prompt.kind === "scale_construction"} variant={run.prompt.kind === "scale_construction" ? "default" : run.feedback && !run.feedback.correct ? "incorrect" : "selected"} onPlay={(notes) => { void playEvents(notes.map((note) => ({ midi: note.midi, atMs: 0, durationMs: 900 }))).catch(() => setAudioError(true)); }} />
+          <StaffPrompt notes={displayedStaffNotes} clef="treble" separateNotes={run.prompt.kind === "scale_construction"} variant={(run.prompt.kind === "scale_construction" || isKeyboardNote) && !run.feedback ? "default" : run.feedback && !run.feedback.correct ? "incorrect" : "selected"} onPlay={(notes) => { void playEvents(notes.map((note) => ({ midi: note.midi, atMs: 0, durationMs: 900 }))).catch(() => setAudioError(true)); }} />
         ) : null}
       </div>
 
@@ -608,7 +612,7 @@ export function ExerciseRunner({
           </div>
           {showKeyboardControls && <KeyboardControls preferences={keyboardPreferences} onChange={updateKeyboardPreferences} />}
           <div className="h-44 w-full sm:h-52">
-            <SimplePiano active={active} selected={selected} onKeyDown={onPianoDown} onKeyUp={onPianoUp} range={keyboardRange} showLabels={keyboardPreferences.showLabels} />
+            <SimplePiano active={active} selected={selected} onKeyDown={onPianoDown} onKeyUp={onPianoUp} range={keyboardRange} showLabels={isKeyboardNote ? false : keyboardPreferences.showLabels} />
           </div>
         </div>
       )}
