@@ -40,6 +40,37 @@ function normalizeSelection(selection: Set<number>) {
 
 const intervalSemitones: Record<string, number> = { m2: 1, M2: 2, m3: 3, M3: 4, P4: 5, TT: 6, P5: 7, m6: 8, M6: 9, m7: 10, M7: 11, P8: 12 };
 
+const intervalNames: Record<string, string> = { m2: "2.ª menor", M2: "2.ª mayor", m3: "3.ª menor", M3: "3.ª mayor", P4: "4.ª justa", P5: "5.ª justa", P8: "Octava justa" };
+const chordQualityNames: Record<string, string> = { maj: "mayores", min: "menores", dim: "disminuidos", aug: "aumentados", "7": "séptima", maj7: "séptima mayor", m7: "séptima menor" };
+
+function practiceConfigurationSummary(kind: ExerciseDetail["kind"], config?: Record<string, unknown>) {
+  const constraints = (config?.constraints ?? {}) as Record<string, unknown>;
+  const list = (key: string) => Array.isArray(constraints[key]) ? constraints[key].map(String) : [];
+  const direction = constraints.direction === "ascending" ? "Ascendente" : constraints.direction === "descending" ? "Descendente" : "Ascendente y descendente";
+
+  switch (kind) {
+    case "ear_interval": {
+      const intervals = list("intervalSet").map((value) => intervalNames[value] ?? value).join(", ");
+      return `${direction}${intervals ? ` · ${intervals}` : ""}`;
+    }
+    case "melodic_direction":
+      return direction;
+    case "scale_construction": {
+      const roots = list("roots").join(", ");
+      return `${constraints.mode === "minor" ? "Menor natural" : "Mayor"}${roots ? ` · ${roots}` : ""}`;
+    }
+    case "chord_identification": {
+      const roots = list("roots").join(", ");
+      const qualities = list("qualities").map((value) => chordQualityNames[value] ?? value).join(", ");
+      return [roots, qualities].filter(Boolean).join(" · ") || "Calidades configuradas";
+    }
+    case "keyboard_note": return "Una nota por vez";
+    case "staff_note": return "Lectura en clave de sol";
+    case "rhythm_pulse": return "Cuatro pulsos";
+    case "rhythm_count": return "Figuras y silencios";
+  }
+}
+
 export function ExerciseRunner({
   exercise,
   preferences,
@@ -400,7 +431,7 @@ export function ExerciseRunner({
           <h2 className="text-2xl font-semibold">{displayExerciseTitle(run.exercise.kind, run.exercise.title)}</h2>
           <p className="mt-2 text-sm text-white/70">{run.prompt.text}</p>
           <p className="mt-1 text-xs text-white/50">
-            {practice ? "Configura, prueba y ajusta a tu ritmo." : `${preferences?.practice?.minutesPerDay ?? 20} min diarios · ${mode === "guest" ? "progreso guardado en este dispositivo" : "progreso guardado en tu perfil"}`}
+            {practice ? practiceConfigurationSummary(run.exercise.kind, practice.config) : `${preferences?.practice?.minutesPerDay ?? 20} min diarios · ${mode === "guest" ? "progreso guardado en este dispositivo" : "progreso guardado en tu perfil"}`}
           </p>
         </div>
         {secondsLeft != null && <div className="rounded-2xl border border-amber-200/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-50">{secondsLeft}s por responder</div>}
