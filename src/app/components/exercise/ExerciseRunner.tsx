@@ -57,7 +57,9 @@ function practiceConfigurationSummary(kind: ExerciseDetail["kind"], config?: Rec
       return direction;
     case "scale_construction": {
       const roots = list("roots").join(", ");
-      return `${constraints.mode === "minor" ? "Menor natural" : "Mayor"}${roots ? ` · ${roots}` : ""}`;
+      const scaleNames: Record<string, string> = { major: "Mayor", minor: "Menor", harmonic_minor: "Menor armónica", melodic_minor: "Menor melódica", major_pentatonic: "Pentatónica mayor", minor_pentatonic: "Pentatónica menor", blues: "Blues", dorian: "Dórica", phrygian: "Frigia", lydian: "Lidia", mixolydian: "Mixolidia", locrian: "Locria" };
+      const modes = list("modes").map((value) => scaleNames[value] ?? value);
+      return `${modes.join(", ") || "Mayor"}${roots ? ` · ${roots}` : ""}`;
     }
     case "chord_identification": {
       const roots = list("roots").join(", ");
@@ -443,7 +445,7 @@ export function ExerciseRunner({
         {run.presentation.staffNotes?.length ? (
           <StaffPrompt notes={earIntervalStaffNotes ?? ((run.prompt.kind === "melodic_direction") && !run.feedback ? run.presentation.staffNotes.slice(0, 1) : run.presentation.staffNotes)} clef={run.presentation.clef ?? "treble"} separateNotes={run.prompt.kind === "ear_interval" || run.prompt.kind === "melodic_direction"} variant={run.feedback ? (run.feedback.correct || run.status === "revealed" ? "selected" : "incorrect") : "default"} onPlay={(notes) => { void playEvents(notes.map((note, index) => ({ midi: note.midi, atMs: index * 550, durationMs: 500 }))).catch(() => setAudioError(true)); }} />
         ) : showSelectionOnStaff && displayedStaffNotes.length ? (
-          <StaffPrompt notes={displayedStaffNotes} clef="treble" variant={run.feedback && !run.feedback.correct ? "incorrect" : "selected"} onPlay={(notes) => { void playEvents(notes.map((note) => ({ midi: note.midi, atMs: 0, durationMs: 900 }))).catch(() => setAudioError(true)); }} />
+          <StaffPrompt notes={displayedStaffNotes} clef="treble" separateNotes={run.prompt.kind === "scale_construction"} variant={run.feedback && !run.feedback.correct ? "incorrect" : "selected"} onPlay={(notes) => { void playEvents(notes.map((note) => ({ midi: note.midi, atMs: 0, durationMs: 900 }))).catch(() => setAudioError(true)); }} />
         ) : null}
       </div>
 

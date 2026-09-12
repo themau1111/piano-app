@@ -64,9 +64,9 @@ export function StaffPrompt({ notes, clef = "treble", variant = "default", onPla
     voice.draw(context, stave);
 
     if (onPlay) {
-      const renderedNotes = Array.from(host.querySelectorAll<SVGGElement>(".vf-stavenote"));
+      const renderedNotes = Array.from(host.querySelectorAll<SVGGElement>(separateNotes ? ".vf-stavenote" : ".vf-notehead"));
       renderedNotes.forEach((element, index) => {
-        const playedNotes = separateNotes ? [notes[index]] : notes;
+        const playedNotes = [notes[index]];
         if (!playedNotes[0]) return;
         element.style.cursor = "pointer";
         const playThisNote = () => onPlay(playedNotes);
