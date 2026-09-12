@@ -394,13 +394,17 @@ export function ExerciseRunner({
   const keyboardTargetLabel = run?.prompt.kind === "keyboard_note" ? run.prompt.targetLabel.replace(/[0-9-]/g, "") : null;
   const showSelectionOnStaff = run?.prompt.kind === "scale_construction" || run?.prompt.kind === "chord_identification" || isKeyboardNote;
   const displayedStaffNotes = isKeyboardNote && selectedStaffNotes.length ? selectedStaffNotes.slice(-1) : selectedStaffNotes;
-  const earIntervalStaffNotes = (() => {
-    if (!run || run.prompt.kind !== "ear_interval" || !run.presentation.staffNotes?.length) return null;
+  const directionalStaffNotes = (() => {
+    if (!run || (run.prompt.kind !== "ear_interval" && run.prompt.kind !== "melodic_direction") || !run.presentation.staffNotes?.length) return null;
     const [first, correctSecond] = run.presentation.staffNotes;
-    if (!first || !correctSecond || !intervalChoice) return run.feedback ? run.presentation.staffNotes : [first];
-    const semitones = intervalSemitones[intervalChoice] ?? 0;
+    const selectedDirection = run.prompt.kind === "ear_interval" ? intervalChoice : directionChoice;
+    if (!first || !correctSecond || !selectedDirection) return run.feedback ? run.presentation.staffNotes : [first];
+    const semitones = run.prompt.kind === "ear_interval"
+      ? intervalSemitones[intervalChoice] ?? 0
+      : Math.abs(correctSecond.midi - first.midi);
     const direction = correctSecond.midi >= first.midi ? 1 : -1;
-    return [first, { midi: first.midi + direction * semitones }];
+    const selectedDirectionSign = selectedDirection === "ascending" ? 1 : -1;
+    return [first, { midi: first.midi + (run.prompt.kind === "ear_interval" ? direction * semitones : selectedDirectionSign * semitones) }];
   })();
   const attemptsLabel = (run?.attemptsLeft ?? 0) >= 2_147_483_647 ? "Sin límite" : String(run?.attemptsLeft ?? 0);
   const revealLabel = run?.feedback?.reveal?.label;
@@ -453,7 +457,7 @@ export function ExerciseRunner({
       <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
         <p className="mb-3 text-sm text-white/70">{run.presentation.instructions}</p>
         {run.presentation.staffNotes?.length ? (
-          <StaffPrompt notes={earIntervalStaffNotes ?? ((run.prompt.kind === "melodic_direction") && !run.feedback ? run.presentation.staffNotes.slice(0, 1) : run.presentation.staffNotes)} clef={run.presentation.clef ?? "treble"} separateNotes={run.prompt.kind === "ear_interval" || run.prompt.kind === "melodic_direction"} variant={run.feedback ? (run.feedback.correct || run.status === "revealed" ? "selected" : "incorrect") : "default"} onPlay={(notes) => { void playEvents(notes.map((note, index) => ({ midi: note.midi, atMs: index * 550, durationMs: 500 }))).catch(() => setAudioError(true)); }} />
+          <StaffPrompt notes={directionalStaffNotes ?? run.presentation.staffNotes} clef={run.presentation.clef ?? "treble"} separateNotes={run.prompt.kind === "ear_interval" || run.prompt.kind === "melodic_direction"} variant={run.feedback ? (run.feedback.correct || run.status === "revealed" ? "selected" : "incorrect") : "default"} onPlay={(notes) => { void playEvents(notes.map((note, index) => ({ midi: note.midi, atMs: index * 550, durationMs: 500 }))).catch(() => setAudioError(true)); }} />
         ) : showSelectionOnStaff && displayedStaffNotes.length ? (
           <StaffPrompt notes={displayedStaffNotes} clef="treble" separateNotes={run.prompt.kind === "scale_construction"} variant={run.prompt.kind === "scale_construction" ? "default" : isKeyboardNote && !run.feedback ? "default" : run.feedback && !run.feedback.correct ? "incorrect" : "selected"} onPlay={(notes) => { void playEvents(notes.map((note) => ({ midi: note.midi, atMs: 0, durationMs: 900 }))).catch(() => setAudioError(true)); }} />
         ) : null}
