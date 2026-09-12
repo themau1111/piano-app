@@ -44,8 +44,9 @@ export function StaffPrompt({ notes, clef = "treble", variant = "default", onPla
     const staveNotes = separateNotes
       ? keys.map((item, index) => {
           const note = new StaveNote({ clef, keys: [item.key], duration: "q" });
-          if (index > 0 && variant === "incorrect") note.setStyle({ fillStyle: "#fb7185", strokeStyle: "#fb7185" });
-          if (index > 0 && variant === "selected") note.setStyle({ fillStyle: "#4ade80", strokeStyle: "#4ade80" });
+          const result = notes[index]?.result;
+          if (result === "incorrect" || (!result && index > 0 && variant === "incorrect")) note.setStyle({ fillStyle: "#fb7185", strokeStyle: "#fb7185" });
+          if (result === "correct" || (!result && index > 0 && variant === "selected")) note.setStyle({ fillStyle: "#4ade80", strokeStyle: "#4ade80" });
           if (item.accidental) note.addModifier(new Accidental(item.accidental), 0);
           return note;
         })

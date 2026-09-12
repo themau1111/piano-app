@@ -119,6 +119,7 @@ export type StaffRenderNote = {
   midi: number;
   label?: string;
   revealed?: boolean;
+  result?: "correct" | "incorrect";
 };
 
 export type ExercisePrompt =
@@ -205,6 +206,7 @@ export type RunFeedback = {
   nextStep?: string;
   weakTags: string[];
   answerSummary?: Record<string, unknown>;
+  noteResults?: Array<{ midi: number; correct: boolean }>;
   reveal?: {
     label: string;
     noteLabels?: string[];
